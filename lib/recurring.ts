@@ -24,6 +24,42 @@ function advance(dateStr: string, freq: Freq): string {
   return date.toISOString().slice(0, 10);
 }
 
+type DueRule = {
+  id: string;
+  user_id: string;
+  type: "income" | "expense";
+  amount: string;
+  category: string | null;
+  note: string | null;
+  frequency: Freq;
+  next_run: string;
+};
+
+// Materialize a batch of already-fetched due rules in a single transaction,
+// advancing each rule's next_run as it goes. Returns the number created.
+async function materialize(rules: DueRule[], today: string): Promise<number> {
+  if (rules.length === 0) return 0;
+
+  let created = 0;
+  await sql.begin(async (tx) => {
+    for (const rule of rules) {
+      let runDate = rule.next_run;
+      // Cap iterations to avoid a runaway loop on stale daily rules.
+      for (let i = 0; i < 1000 && runDate <= today; i++) {
+        await tx`
+          insert into transactions (user_id, type, amount, category, note, occurred_on)
+          values (${rule.user_id}, ${rule.type}, ${rule.amount}, ${rule.category}, ${rule.note}, ${runDate})
+        `;
+        created++;
+        runDate = advance(runDate, rule.frequency);
+      }
+      await tx`update recurring set next_run = ${runDate} where id = ${rule.id}`;
+    }
+  });
+
+  return created;
+}
+
 /**
  * Materializes any active recurring rules whose next_run date has arrived
  * (or passed) into real transactions, advancing next_run as it goes.
@@ -35,41 +71,32 @@ export async function generateDueRecurring(userId: string): Promise<number> {
     select to_char(current_date, 'YYYY-MM-DD') as today
   `;
 
-  const due = await sql<
-    {
-      id: string;
-      type: "income" | "expense";
-      amount: string;
-      category: string | null;
-      note: string | null;
-      frequency: Freq;
-      next_run: string;
-    }[]
-  >`
-    select id, type, amount, category, note, frequency,
+  const due = await sql<DueRule[]>`
+    select id, user_id, type, amount, category, note, frequency,
            to_char(next_run, 'YYYY-MM-DD') as next_run
     from recurring
     where user_id = ${userId} and active = true and next_run <= current_date
   `;
 
-  if (due.length === 0) return 0;
+  return materialize(due, today);
+}
 
-  let created = 0;
-  await sql.begin(async (tx) => {
-    for (const rule of due) {
-      let runDate = rule.next_run;
-      // Cap iterations to avoid a runaway loop on stale daily rules.
-      for (let i = 0; i < 1000 && runDate <= today; i++) {
-        await tx`
-          insert into transactions (user_id, type, amount, category, note, occurred_on)
-          values (${userId}, ${rule.type}, ${rule.amount}, ${rule.category}, ${rule.note}, ${runDate})
-        `;
-        created++;
-        runDate = advance(runDate, rule.frequency);
-      }
-      await tx`update recurring set next_run = ${runDate} where id = ${rule.id}`;
-    }
-  });
+/**
+ * Materializes due recurring rules for ALL users in one pass.
+ * Intended to be invoked by a daily cron job so the hot render paths
+ * (e.g. the dashboard) never have to do this work on request.
+ */
+export async function generateAllDueRecurring(): Promise<number> {
+  const [{ today }] = await sql<{ today: string }[]>`
+    select to_char(current_date, 'YYYY-MM-DD') as today
+  `;
 
-  return created;
+  const due = await sql<DueRule[]>`
+    select id, user_id, type, amount, category, note, frequency,
+           to_char(next_run, 'YYYY-MM-DD') as next_run
+    from recurring
+    where active = true and next_run <= current_date
+  `;
+
+  return materialize(due, today);
 }

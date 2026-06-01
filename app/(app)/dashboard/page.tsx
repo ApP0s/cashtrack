@@ -8,7 +8,6 @@ import {
   getTotals,
   getTransactions,
 } from "@/lib/queries";
-import { generateDueRecurring } from "@/lib/recurring";
 import { formatMoney, formatDate } from "@/lib/format";
 import { ExpensePie, MonthlyBars } from "@/components/charts";
 import { TransactionModal } from "@/components/transaction-modal";
@@ -23,8 +22,8 @@ function monthRange() {
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  // Materialize any recurring entries that have come due.
-  await generateDueRecurring(user.id);
+  // Recurring entries are materialized by a daily cron (see app/api/cron/recurring),
+  // so the dashboard no longer pays for that work on every render.
 
   const { from, to } = monthRange();
 
