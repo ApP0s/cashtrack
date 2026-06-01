@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import {
+  getBudgets,
   getCategories,
   getExpenseByCategory,
   getMonthlyTrend,
   getTotals,
   getTransactions,
 } from "@/lib/queries";
+import { generateDueRecurring } from "@/lib/recurring";
 import { formatMoney, formatDate } from "@/lib/format";
 import { ExpensePie, MonthlyBars } from "@/components/charts";
 import { TransactionModal } from "@/components/transaction-modal";
@@ -21,9 +23,12 @@ function monthRange() {
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  // Materialize any recurring entries that have come due.
+  await generateDueRecurring(user.id);
+
   const { from, to } = monthRange();
 
-  const [allTime, month, byCategory, trend, recent, categories] =
+  const [allTime, month, byCategory, trend, recent, categories, budgets] =
     await Promise.all([
       getTotals(user.id),
       getTotals(user.id, { from, to }),
@@ -31,9 +36,11 @@ export default async function DashboardPage() {
       getMonthlyTrend(user.id, 6),
       getTransactions(user.id, {}),
       getCategories(user.id),
+      getBudgets(user.id),
     ]);
 
   const recentFew = recent.slice(0, 6);
+  const budgetAlerts = budgets.filter((b) => b.spent / b.amount >= 0.8);
   const monthName = new Date().toLocaleDateString(undefined, {
     month: "long",
     year: "numeric",
@@ -75,6 +82,35 @@ export default async function DashboardPage() {
           tone="expense"
         />
       </section>
+
+      {/* Budget alerts */}
+      {budgetAlerts.length > 0 && (
+        <section className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-amber-900">Budget alerts</h2>
+            <Link href="/budgets" className="text-sm font-medium text-brand">
+              Manage →
+            </Link>
+          </div>
+          <ul className="space-y-1 text-sm">
+            {budgetAlerts.map((b) => {
+              const over = b.spent > b.amount;
+              return (
+                <li key={b.id} className="flex justify-between">
+                  <span className="text-amber-900">{b.category}</span>
+                  <span
+                    className={over ? "font-semibold text-expense" : "text-amber-800"}
+                  >
+                    {formatMoney(b.spent, user.currency)} /{" "}
+                    {formatMoney(b.amount, user.currency)}
+                    {over ? " · over budget" : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Charts */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">

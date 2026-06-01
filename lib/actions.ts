@@ -200,3 +200,100 @@ export async function updateSettingsAction(
   revalidatePath("/dashboard");
   return { ok: true };
 }
+
+// ---------- Budgets ----------
+
+export async function saveBudgetAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const category = String(formData.get("category") ?? "").trim();
+  const amount = Number(formData.get("amount"));
+
+  if (!category) return { error: "Pick a category." };
+  if (!Number.isFinite(amount) || amount <= 0)
+    return { error: "Budget must be greater than zero." };
+
+  await sql`
+    insert into budgets (user_id, category, amount)
+    values (${user.id}, ${category}, ${amount})
+    on conflict (user_id, category) do update set amount = ${amount}
+  `;
+
+  revalidatePath("/budgets");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function deleteBudgetAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const id = String(formData.get("id") ?? "").trim();
+  if (id) {
+    await sql`delete from budgets where id = ${id} and user_id = ${user.id}`;
+  }
+  revalidatePath("/budgets");
+  revalidatePath("/dashboard");
+}
+
+// ---------- Recurring ----------
+
+export async function saveRecurringAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const id = String(formData.get("id") ?? "").trim();
+  const type = String(formData.get("type") ?? "");
+  const amount = Number(formData.get("amount"));
+  const category = String(formData.get("category") ?? "").trim() || null;
+  const note = String(formData.get("note") ?? "").trim() || null;
+  const frequency = String(formData.get("frequency") ?? "");
+  const nextRun = String(formData.get("next_run") ?? "").trim();
+
+  if (type !== "income" && type !== "expense")
+    return { error: "Choose income or expense." };
+  if (!Number.isFinite(amount) || amount <= 0)
+    return { error: "Amount must be greater than zero." };
+  if (!["daily", "weekly", "monthly", "yearly"].includes(frequency))
+    return { error: "Choose a frequency." };
+  if (!nextRun) return { error: "Pick a start date." };
+
+  if (id) {
+    await sql`
+      update recurring
+      set type = ${type}, amount = ${amount}, category = ${category},
+          note = ${note}, frequency = ${frequency}, next_run = ${nextRun}
+      where id = ${id} and user_id = ${user.id}
+    `;
+  } else {
+    await sql`
+      insert into recurring (user_id, type, amount, category, note, frequency, next_run)
+      values (${user.id}, ${type}, ${amount}, ${category}, ${note}, ${frequency}, ${nextRun})
+    `;
+  }
+
+  revalidatePath("/recurring");
+  return { ok: true };
+}
+
+export async function deleteRecurringAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const id = String(formData.get("id") ?? "").trim();
+  if (id) {
+    await sql`delete from recurring where id = ${id} and user_id = ${user.id}`;
+  }
+  revalidatePath("/recurring");
+}
+
+export async function toggleRecurringAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const id = String(formData.get("id") ?? "").trim();
+  if (id) {
+    await sql`
+      update recurring set active = not active
+      where id = ${id} and user_id = ${user.id}
+    `;
+  }
+  revalidatePath("/recurring");
+}

@@ -35,3 +35,29 @@ create table if not exists transactions (
 
 create index if not exists idx_tx_user_date on transactions (user_id, occurred_on desc);
 create index if not exists idx_tx_user_type on transactions (user_id, type);
+
+-- Monthly spending limit per expense category.
+create table if not exists budgets (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references users(id) on delete cascade,
+  category   text not null,
+  amount     numeric(14,2) not null check (amount > 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, category)
+);
+
+-- Auto-repeating transactions (salary, rent, subscriptions, …).
+create table if not exists recurring (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references users(id) on delete cascade,
+  type       text not null check (type in ('income','expense')),
+  amount     numeric(14,2) not null check (amount > 0),
+  category   text,
+  note       text,
+  frequency  text not null check (frequency in ('daily','weekly','monthly','yearly')),
+  next_run   date not null,
+  active     boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_recurring_due on recurring (user_id, active, next_run);

@@ -117,6 +117,69 @@ export async function getExpenseByCategory(
   }));
 }
 
+export type BudgetProgress = {
+  id: string;
+  category: string;
+  amount: number;
+  spent: number;
+  color: string;
+};
+
+export async function getBudgets(userId: string): Promise<BudgetProgress[]> {
+  const rows = await sql<
+    { id: string; category: string; amount: string; spent: string; color: string | null }[]
+  >`
+    select b.id,
+           b.category,
+           b.amount,
+           coalesce(s.total, 0) as spent,
+           max(c.color) as color
+    from budgets b
+    left join (
+      select category, sum(amount) as total
+      from transactions
+      where user_id = ${userId}
+        and type = 'expense'
+        and occurred_on >= date_trunc('month', current_date)
+        and occurred_on < date_trunc('month', current_date) + interval '1 month'
+      group by category
+    ) s on s.category = b.category
+    left join categories c
+      on c.user_id = ${userId} and c.name = b.category and c.type = 'expense'
+    where b.user_id = ${userId}
+    group by b.id, b.category, b.amount, s.total
+    order by b.category
+  `;
+  return rows.map((r) => ({
+    id: r.id,
+    category: r.category,
+    amount: toNum(r.amount),
+    spent: toNum(r.spent),
+    color: r.color ?? "#64748b",
+  }));
+}
+
+export type Recurring = {
+  id: string;
+  type: "income" | "expense";
+  amount: number;
+  category: string | null;
+  note: string | null;
+  frequency: "daily" | "weekly" | "monthly" | "yearly";
+  next_run: string;
+  active: boolean;
+};
+
+export async function getRecurring(userId: string): Promise<Recurring[]> {
+  const rows = await sql<Recurring[]>`
+    select id, type, amount, category, note, frequency, next_run, active
+    from recurring
+    where user_id = ${userId}
+    order by active desc, next_run
+  `;
+  return rows.map((r) => ({ ...r, amount: toNum(r.amount) }));
+}
+
 export type MonthlyPoint = { month: string; income: number; expense: number };
 
 export async function getMonthlyTrend(

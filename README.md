@@ -9,9 +9,12 @@ Built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, **Recharts**, and *
 - ➕ **Add / edit / delete** income and expense transactions
 - 🏷️ **Categories** — colored, per-type (income vs expense), seeded with sensible defaults
 - 📊 **Dashboard** — balance, monthly income/expense, spending-by-category donut, 6-month income-vs-expense bars
+- 🎯 **Budgets** — monthly spending limits per category with progress bars and dashboard alerts at 80%+
+- 🔁 **Recurring transactions** — daily/weekly/monthly/yearly rules auto-materialized on each visit (salary, rent, subscriptions); pause/resume/edit
 - 🔎 **Filtering** — by type, category, date range, and free-text search
 - 📁 **CSV export** — download the current (filtered) transactions for Excel
 - 💱 **Multi-currency display** (THB, USD, EUR, GBP, JPY, CNY, AUD, SGD)
+- 📲 **Installable PWA** — web app manifest, icons, and an offline fallback (service worker)
 - 📱 **Responsive** — works on desktop and mobile
 
 ## Tech & architecture

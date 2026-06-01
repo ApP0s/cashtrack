@@ -7,6 +7,8 @@ import { logoutAction } from "@/lib/actions";
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "▦" },
   { href: "/transactions", label: "Transactions", icon: "⇅" },
+  { href: "/budgets", label: "Budgets", icon: "◴" },
+  { href: "/recurring", label: "Recurring", icon: "↻" },
   { href: "/categories", label: "Categories", icon: "🏷" },
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
