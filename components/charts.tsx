@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import type { CategorySlice, MonthlyPoint } from "@/lib/queries";
 import { formatMoney } from "@/lib/format";
+import { useT } from "@/components/i18n-provider";
 
 export function ExpensePie({
   data,
@@ -22,10 +23,11 @@ export function ExpensePie({
   data: CategorySlice[];
   currency: string;
 }) {
+  const t = useT();
   if (data.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-muted">
-        No expenses in this period.
+        {t("dash.noExpenses")}
       </div>
     );
   }

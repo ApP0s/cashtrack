@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveTransactionAction, type ActionState } from "@/lib/actions";
 import type { Category, Transaction } from "@/lib/queries";
+import { useT } from "@/components/i18n-provider";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -12,13 +13,14 @@ function todayISO() {
 
 function Save() {
   const { pending } = useFormStatus();
+  const t = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
     >
-      {pending ? "Saving…" : "Save"}
+      {pending ? t("common.saving") : t("common.save")}
     </button>
   );
 }
@@ -32,6 +34,7 @@ export function TransactionModal({
   transaction?: Transaction;
   trigger: React.ReactNode;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"income" | "expense">(
     transaction?.type ?? "expense",
@@ -42,18 +45,12 @@ export function TransactionModal({
   );
   const wasOpen = useRef(false);
 
-  // Close the modal once a save succeeds.
   useEffect(() => {
-    if (open && state?.ok) {
-      setOpen(false);
-    }
+    if (open && state?.ok) setOpen(false);
   }, [state, open]);
 
-  // Reset the type toggle each time the modal opens.
   useEffect(() => {
-    if (open && !wasOpen.current) {
-      setType(transaction?.type ?? "expense");
-    }
+    if (open && !wasOpen.current) setType(transaction?.type ?? "expense");
     wasOpen.current = open;
   }, [open, transaction]);
 
@@ -74,7 +71,7 @@ export function TransactionModal({
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold">
-                {transaction ? "Edit transaction" : "Add transaction"}
+                {transaction ? t("txm.edit") : t("txm.add")}
               </h2>
               <button
                 onClick={() => setOpen(false)}
@@ -92,7 +89,7 @@ export function TransactionModal({
               <input type="hidden" name="type" value={type} />
 
               {/* Type toggle */}
-              <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
                 <button
                   type="button"
                   onClick={() => setType("expense")}
@@ -102,7 +99,7 @@ export function TransactionModal({
                       : "text-muted"
                   }`}
                 >
-                  Expense
+                  {t("txm.expense")}
                 </button>
                 <button
                   type="button"
@@ -113,12 +110,14 @@ export function TransactionModal({
                       : "text-muted"
                   }`}
                 >
-                  Income
+                  {t("txm.income")}
                 </button>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Amount</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.amount")}
+                </label>
                 <input
                   name="amount"
                   type="number"
@@ -133,14 +132,16 @@ export function TransactionModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Category</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.category")}
+                </label>
                 <select
                   name="category"
                   defaultValue={transaction?.category ?? ""}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                  className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                   key={type}
                 >
-                  <option value="">— None —</option>
+                  <option value="">{t("common.none")}</option>
                   {visibleCategories.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
@@ -150,7 +151,9 @@ export function TransactionModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Date</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.date")}
+                </label>
                 <input
                   name="occurred_on"
                   type="date"
@@ -161,18 +164,20 @@ export function TransactionModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Note</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.note")}
+                </label>
                 <input
                   name="note"
                   type="text"
                   defaultValue={transaction?.note ?? ""}
                   className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                  placeholder="Optional description"
+                  placeholder={t("txm.optionalDesc")}
                 />
               </div>
 
               {state?.error && (
-                <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-expense">
+                <p className="rounded-lg bg-expense/10 px-3 py-2 text-sm text-expense">
                   {state.error}
                 </p>
               )}
@@ -181,9 +186,9 @@ export function TransactionModal({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-slate-100"
+                  className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-subtle"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <Save />
               </div>

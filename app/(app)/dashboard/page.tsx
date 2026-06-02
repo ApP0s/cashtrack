@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 import {
   getBudgets,
   getCategories,
@@ -8,7 +10,7 @@ import {
   getTotals,
   getTransactions,
 } from "@/lib/queries";
-import { formatMoney, formatDate } from "@/lib/format";
+import { formatMoney, formatDate, formatMonth } from "@/lib/format";
 import { ExpensePie, MonthlyBars } from "@/components/charts";
 import { TransactionModal } from "@/components/transaction-modal";
 
@@ -21,9 +23,10 @@ function monthRange() {
 }
 
 export default async function DashboardPage() {
-  const user = await requireUser();
-  // Recurring entries are materialized by a daily cron (see app/api/cron/recurring),
-  // so the dashboard no longer pays for that work on every render.
+  const [user, locale] = await Promise.all([requireUser(), getLocale()]);
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, k, vars);
+  // Recurring entries are materialized by a daily cron (see app/api/cron/recurring).
 
   const { from, to } = monthRange();
 
@@ -40,23 +43,20 @@ export default async function DashboardPage() {
 
   const recentFew = recent.slice(0, 6);
   const budgetAlerts = budgets.filter((b) => b.spent / b.amount >= 0.8);
-  const monthName = new Date().toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-  });
+  const monthName = formatMonth(new Date(), locale);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold">{tr("dash.title")}</h1>
           <p className="text-sm text-muted">{monthName}</p>
         </div>
         <TransactionModal
           categories={categories}
           trigger={
             <button className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark">
-              + Add transaction
+              {tr("dash.addTransaction")}
             </button>
           }
         />
@@ -65,18 +65,18 @@ export default async function DashboardPage() {
       {/* Summary cards */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Current balance"
+          label={tr("dash.currentBalance")}
           value={formatMoney(allTime.balance, user.currency)}
           tone={allTime.balance >= 0 ? "income" : "expense"}
-          hint="All time"
+          hint={tr("dash.allTime")}
         />
         <StatCard
-          label="Income this month"
+          label={tr("dash.incomeThisMonth")}
           value={formatMoney(month.income, user.currency)}
           tone="income"
         />
         <StatCard
-          label="Expense this month"
+          label={tr("dash.expenseThisMonth")}
           value={formatMoney(month.expense, user.currency)}
           tone="expense"
         />
@@ -84,11 +84,13 @@ export default async function DashboardPage() {
 
       {/* Budget alerts */}
       {budgetAlerts.length > 0 && (
-        <section className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <section className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-amber-900">Budget alerts</h2>
+            <h2 className="font-semibold text-amber-700 dark:text-amber-300">
+              {tr("dash.budgetAlerts")}
+            </h2>
             <Link href="/budgets" className="text-sm font-medium text-brand">
-              Manage →
+              {tr("dash.manage")}
             </Link>
           </div>
           <ul className="space-y-1 text-sm">
@@ -96,13 +98,19 @@ export default async function DashboardPage() {
               const over = b.spent > b.amount;
               return (
                 <li key={b.id} className="flex justify-between">
-                  <span className="text-amber-900">{b.category}</span>
+                  <span className="text-amber-800 dark:text-amber-200">
+                    {b.category}
+                  </span>
                   <span
-                    className={over ? "font-semibold text-expense" : "text-amber-800"}
+                    className={
+                      over
+                        ? "font-semibold text-expense"
+                        : "text-amber-700 dark:text-amber-300"
+                    }
                   >
                     {formatMoney(b.spent, user.currency)} /{" "}
                     {formatMoney(b.amount, user.currency)}
-                    {over ? " · over budget" : ""}
+                    {over ? tr("dash.overBudget") : ""}
                   </span>
                 </li>
               );
@@ -113,44 +121,45 @@ export default async function DashboardPage() {
 
       {/* Charts */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card title="Spending by category" subtitle={monthName}>
+        <Card title={tr("dash.spendingByCategory")} subtitle={monthName}>
           <ExpensePie data={byCategory} currency={user.currency} />
         </Card>
-        <Card title="Income vs expense" subtitle="Last 6 months">
+        <Card title={tr("dash.incomeVsExpense")} subtitle={tr("dash.last6Months")}>
           <MonthlyBars data={trend} currency={user.currency} />
         </Card>
       </section>
 
       {/* Recent transactions */}
       <Card
-        title="Recent transactions"
+        title={tr("dash.recentTransactions")}
         action={
           <Link href="/transactions" className="text-sm font-medium text-brand">
-            View all →
+            {tr("dash.viewAll")}
           </Link>
         }
       >
         {recentFew.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">
-            No transactions yet. Add your first one above.
-          </p>
+          <p className="py-6 text-center text-sm text-muted">{tr("dash.noTx")}</p>
         ) : (
           <ul className="divide-y divide-border">
-            {recentFew.map((t) => (
-              <li key={t.id} className="flex items-center justify-between py-3">
+            {recentFew.map((tx) => (
+              <li key={tx.id} className="flex items-center justify-between py-3">
                 <div>
                   <p className="font-medium">
-                    {t.category || (t.note ? t.note : "Uncategorized")}
+                    {tx.category ||
+                      (tx.note ? tx.note : tr("dash.uncategorized"))}
                   </p>
-                  <p className="text-xs text-muted">{formatDate(t.occurred_on)}</p>
+                  <p className="text-xs text-muted">
+                    {formatDate(tx.occurred_on, locale)}
+                  </p>
                 </div>
                 <span
                   className={`font-semibold ${
-                    t.type === "income" ? "text-income" : "text-expense"
+                    tx.type === "income" ? "text-income" : "text-expense"
                   }`}
                 >
-                  {t.type === "income" ? "+" : "−"}
-                  {formatMoney(t.amount, user.currency)}
+                  {tx.type === "income" ? "+" : "−"}
+                  {formatMoney(tx.amount, user.currency)}
                 </span>
               </li>
             ))}

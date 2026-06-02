@@ -11,6 +11,9 @@ Built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, **Recharts**, and *
 - 📊 **Dashboard** — balance, monthly income/expense, spending-by-category donut, 6-month income-vs-expense bars
 - 🎯 **Budgets** — monthly spending limits per category with progress bars and dashboard alerts at 80%+
 - 🔁 **Recurring transactions** — daily/weekly/monthly/yearly rules auto-materialized on each visit (salary, rent, subscriptions); pause/resume/edit
+- ∑ **Recurring totals** — monthly / daily / yearly equivalent of all active recurring entries, split income vs expense
+- 🌗 **Dark mode** — light/dark theme toggle, persisted (no flash on reload)
+- 🌏 **Thai & English** — full UI translation with a language switch; Thai dates use the Buddhist era
 - 🔎 **Filtering** — by type, category, date range, and free-text search
 - 📁 **CSV export** — download the current (filtered) transactions for Excel
 - 💱 **Multi-currency display** (THB, USD, EUR, GBP, JPY, CNY, AUD, SGD)

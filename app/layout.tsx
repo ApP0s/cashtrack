@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { I18nProvider } from "@/components/i18n-provider";
+import { getLocale, getTheme } from "@/lib/locale";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,19 +34,25 @@ export const viewport: Viewport = {
   themeColor: "#4f46e5",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [locale, theme] = await Promise.all([getLocale(), getTheme()]);
+
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ${
+        theme === "dark" ? "dark" : ""
+      }`}
     >
       <body className="min-h-full">
-        {children}
-        <ServiceWorkerRegister />
+        <I18nProvider locale={locale}>
+          {children}
+          <ServiceWorkerRegister />
+        </I18nProvider>
       </body>
     </html>
   );

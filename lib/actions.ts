@@ -11,6 +11,8 @@ import {
   verifyPassword,
 } from "./auth";
 import { CURRENCIES } from "./format";
+import { getLocale } from "./locale";
+import { t } from "./i18n";
 
 const DEFAULT_CATEGORIES: { name: string; type: "income" | "expense"; color: string }[] = [
   { name: "Salary", type: "income", color: "#16a34a" },
@@ -38,13 +40,14 @@ export async function registerAction(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const locale = await getLocale();
 
-  if (!email || !password) return { error: "Email and password are required." };
-  if (password.length < 6)
-    return { error: "Password must be at least 6 characters." };
+  if (!email || !password)
+    return { error: t(locale, "err.emailPasswordRequired") };
+  if (password.length < 6) return { error: t(locale, "err.passwordMin") };
 
   const existing = await sql`select id from users where email = ${email}`;
-  if (existing.length > 0) return { error: "That email is already registered." };
+  if (existing.length > 0) return { error: t(locale, "err.emailTaken") };
 
   const hash = await hashPassword(password);
   const rows = await sql<{ id: string }[]>`
@@ -73,15 +76,17 @@ export async function loginAction(
 ): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const locale = await getLocale();
 
-  if (!email || !password) return { error: "Email and password are required." };
+  if (!email || !password)
+    return { error: t(locale, "err.emailPasswordRequired") };
 
   const rows = await sql<{ id: string; password_hash: string }[]>`
     select id, password_hash from users where email = ${email}
   `;
   const user = rows[0];
   if (!user || !(await verifyPassword(password, user.password_hash))) {
-    return { error: "Invalid email or password." };
+    return { error: t(locale, "err.invalidCredentials") };
   }
 
   await createSession(user.id);
@@ -107,12 +112,13 @@ export async function saveTransactionAction(
   const category = String(formData.get("category") ?? "").trim() || null;
   const note = String(formData.get("note") ?? "").trim() || null;
   const occurredOn = String(formData.get("occurred_on") ?? "").trim();
+  const locale = await getLocale();
 
   if (type !== "income" && type !== "expense")
-    return { error: "Choose income or expense." };
+    return { error: t(locale, "err.chooseType") };
   if (!Number.isFinite(amount) || amount <= 0)
-    return { error: "Amount must be greater than zero." };
-  if (!occurredOn) return { error: "Pick a date." };
+    return { error: t(locale, "err.amountPositive") };
+  if (!occurredOn) return { error: t(locale, "err.pickDate") };
 
   if (id) {
     await sql`
@@ -153,10 +159,11 @@ export async function saveCategoryAction(
   const name = String(formData.get("name") ?? "").trim();
   const type = String(formData.get("type") ?? "");
   const color = String(formData.get("color") ?? "#64748b").trim();
+  const locale = await getLocale();
 
-  if (!name) return { error: "Category name is required." };
+  if (!name) return { error: t(locale, "err.categoryRequired") };
   if (type !== "income" && type !== "expense")
-    return { error: "Choose income or expense." };
+    return { error: t(locale, "err.chooseType") };
 
   try {
     await sql`
@@ -164,7 +171,7 @@ export async function saveCategoryAction(
       values (${user.id}, ${name}, ${type}, ${color})
     `;
   } catch {
-    return { error: "That category already exists." };
+    return { error: t(locale, "err.categoryExists") };
   }
 
   revalidatePath("/categories");
@@ -189,8 +196,10 @@ export async function updateSettingsAction(
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim() || null;
   const currency = String(formData.get("currency") ?? "THB");
+  const locale = await getLocale();
 
-  if (!CURRENCIES.includes(currency)) return { error: "Unsupported currency." };
+  if (!CURRENCIES.includes(currency))
+    return { error: t(locale, "err.unsupportedCurrency") };
 
   await sql`
     update users set name = ${name}, currency = ${currency} where id = ${user.id}
@@ -210,10 +219,11 @@ export async function saveBudgetAction(
   const user = await requireUser();
   const category = String(formData.get("category") ?? "").trim();
   const amount = Number(formData.get("amount"));
+  const locale = await getLocale();
 
-  if (!category) return { error: "Pick a category." };
+  if (!category) return { error: t(locale, "err.pickCategory") };
   if (!Number.isFinite(amount) || amount <= 0)
-    return { error: "Budget must be greater than zero." };
+    return { error: t(locale, "err.budgetPositive") };
 
   await sql`
     insert into budgets (user_id, category, amount)
@@ -250,14 +260,15 @@ export async function saveRecurringAction(
   const note = String(formData.get("note") ?? "").trim() || null;
   const frequency = String(formData.get("frequency") ?? "");
   const nextRun = String(formData.get("next_run") ?? "").trim();
+  const locale = await getLocale();
 
   if (type !== "income" && type !== "expense")
-    return { error: "Choose income or expense." };
+    return { error: t(locale, "err.chooseType") };
   if (!Number.isFinite(amount) || amount <= 0)
-    return { error: "Amount must be greater than zero." };
+    return { error: t(locale, "err.amountPositive") };
   if (!["daily", "weekly", "monthly", "yearly"].includes(frequency))
-    return { error: "Choose a frequency." };
-  if (!nextRun) return { error: "Pick a start date." };
+    return { error: t(locale, "err.chooseFrequency") };
+  if (!nextRun) return { error: t(locale, "err.pickStartDate") };
 
   if (id) {
     await sql`

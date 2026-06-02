@@ -4,16 +4,18 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { ActionState } from "@/lib/actions";
+import { useT } from "@/components/i18n-provider";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
+  const t = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="w-full rounded-lg bg-brand py-2.5 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
     >
-      {pending ? "Please wait…" : label}
+      {pending ? t("common.pleaseWait") : label}
     </button>
   );
 }
@@ -25,6 +27,7 @@ export function AuthForm({
   mode: "login" | "register";
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
 }) {
+  const t = useT();
   const [state, formAction] = useActionState<ActionState, FormData>(
     action,
     undefined,
@@ -39,7 +42,7 @@ export function AuthForm({
         </div>
         <h1 className="text-2xl font-bold">CashTrack</h1>
         <p className="mt-1 text-sm text-muted">
-          {isRegister ? "Create your account" : "Welcome back"}
+          {isRegister ? t("auth.createAccount") : t("auth.welcomeBack")}
         </p>
       </div>
 
@@ -49,18 +52,22 @@ export function AuthForm({
       >
         {isRegister && (
           <div>
-            <label className="mb-1 block text-sm font-medium">Name</label>
+            <label className="mb-1 block text-sm font-medium">
+              {t("auth.name")}
+            </label>
             <input
               name="name"
               type="text"
               autoComplete="name"
               className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-              placeholder="Your name"
+              placeholder={t("auth.yourName")}
             />
           </div>
         )}
         <div>
-          <label className="mb-1 block text-sm font-medium">Email</label>
+          <label className="mb-1 block text-sm font-medium">
+            {t("auth.email")}
+          </label>
           <input
             name="email"
             type="email"
@@ -71,7 +78,9 @@ export function AuthForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Password</label>
+          <label className="mb-1 block text-sm font-medium">
+            {t("auth.password")}
+          </label>
           <input
             name="password"
             type="password"
@@ -84,27 +93,29 @@ export function AuthForm({
         </div>
 
         {state?.error && (
-          <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-expense">
+          <p className="rounded-lg bg-expense/10 px-3 py-2 text-sm text-expense">
             {state.error}
           </p>
         )}
 
-        <SubmitButton label={isRegister ? "Create account" : "Sign in"} />
+        <SubmitButton
+          label={isRegister ? t("auth.createAccountBtn") : t("auth.signIn")}
+        />
       </form>
 
       <p className="mt-5 text-center text-sm text-muted">
         {isRegister ? (
           <>
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link href="/login" className="font-semibold text-brand">
-              Sign in
+              {t("auth.signIn")}
             </Link>
           </>
         ) : (
           <>
-            New here?{" "}
+            {t("auth.newHere")}{" "}
             <Link href="/register" className="font-semibold text-brand">
-              Create an account
+              {t("auth.createAccountBtn")}
             </Link>
           </>
         )}

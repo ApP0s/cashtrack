@@ -1,17 +1,44 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (toggled by adding `dark` to <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: #f6f7fb;
   --color-surface: #ffffff;
   --color-foreground: #0f172a;
   --color-muted: #64748b;
   --color-border: #e2e8f0;
+  --color-subtle: #f1f5f9;
+  --color-subtle-hover: #f8fafc;
   --color-brand: #4f46e5;
   --color-brand-dark: #4338ca;
   --color-income: #16a34a;
   --color-expense: #e11d48;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+}
+
+/* Dark palette — overrides the semantic tokens above. */
+.dark {
+  --color-background: #0b1120;
+  --color-surface: #111a2e;
+  --color-foreground: #e5e9f0;
+  --color-muted: #93a4c0;
+  --color-border: #24304a;
+  --color-subtle: #1c2740;
+  --color-subtle-hover: #283655;
+  --color-brand: #6366f1;
+  --color-brand-dark: #4f46e5;
+  --color-income: #22c55e;
+  --color-expense: #fb7185;
+}
+
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
 }
 
 html,
@@ -25,8 +52,16 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Thin scrollbars for the app shell */
+/* Make native form controls follow the theme surface. */
+input,
+select,
+textarea {
+  background-color: var(--color-surface);
+  color: inherit;
+}
+
+/* Thin themed scrollbars. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--color-border) transparent;
 }

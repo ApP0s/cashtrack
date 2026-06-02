@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveRecurringAction, type ActionState } from "@/lib/actions";
 import type { Category, Recurring } from "@/lib/queries";
+import { useT } from "@/components/i18n-provider";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -12,13 +13,14 @@ function todayISO() {
 
 function Save() {
   const { pending } = useFormStatus();
+  const t = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
     >
-      {pending ? "Saving…" : "Save"}
+      {pending ? t("common.saving") : t("common.save")}
     </button>
   );
 }
@@ -32,6 +34,7 @@ export function RecurringModal({
   rule?: Recurring;
   trigger: React.ReactNode;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"income" | "expense">(
     rule?.type ?? "expense",
@@ -68,7 +71,7 @@ export function RecurringModal({
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold">
-                {rule ? "Edit recurring" : "New recurring"}
+                {rule ? t("recm.edit") : t("recm.new")}
               </h2>
               <button
                 onClick={() => setOpen(false)}
@@ -83,7 +86,7 @@ export function RecurringModal({
               {rule && <input type="hidden" name="id" value={rule.id} />}
               <input type="hidden" name="type" value={type} />
 
-              <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
                 <button
                   type="button"
                   onClick={() => setType("expense")}
@@ -93,7 +96,7 @@ export function RecurringModal({
                       : "text-muted"
                   }`}
                 >
-                  Expense
+                  {t("txm.expense")}
                 </button>
                 <button
                   type="button"
@@ -104,12 +107,14 @@ export function RecurringModal({
                       : "text-muted"
                   }`}
                 >
-                  Income
+                  {t("txm.income")}
                 </button>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Amount</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("recm.amount")}
+                </label>
                 <input
                   name="amount"
                   type="number"
@@ -125,22 +130,22 @@ export function RecurringModal({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium">
-                    Frequency
+                    {t("recm.frequency")}
                   </label>
                   <select
                     name="frequency"
                     defaultValue={rule?.frequency ?? "monthly"}
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+                    className="w-full rounded-lg border border-border px-3 py-2"
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="daily">{t("rec.daily")}</option>
+                    <option value="weekly">{t("rec.weekly")}</option>
+                    <option value="monthly">{t("rec.monthly")}</option>
+                    <option value="yearly">{t("rec.yearly")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium">
-                    {rule ? "Next run" : "Start date"}
+                    {rule ? t("recm.nextRun") : t("recm.startDate")}
                   </label>
                   <input
                     name="next_run"
@@ -153,14 +158,16 @@ export function RecurringModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Category</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("recm.category")}
+                </label>
                 <select
                   name="category"
                   defaultValue={rule?.category ?? ""}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+                  className="w-full rounded-lg border border-border px-3 py-2"
                   key={type}
                 >
-                  <option value="">— None —</option>
+                  <option value="">{t("common.none")}</option>
                   {visibleCategories.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
@@ -170,18 +177,20 @@ export function RecurringModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Note</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("recm.note")}
+                </label>
                 <input
                   name="note"
                   type="text"
                   defaultValue={rule?.note ?? ""}
                   className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                  placeholder="e.g. Salary, Rent, Netflix"
+                  placeholder={t("recm.notePlaceholder")}
                 />
               </div>
 
               {state?.error && (
-                <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-expense">
+                <p className="rounded-lg bg-expense/10 px-3 py-2 text-sm text-expense">
                   {state.error}
                 </p>
               )}
@@ -190,9 +199,9 @@ export function RecurringModal({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-slate-100"
+                  className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-subtle"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <Save />
               </div>
