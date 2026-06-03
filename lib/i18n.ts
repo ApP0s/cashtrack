@@ -17,6 +17,7 @@ const en: Dict = {
   "nav.transactions": "Transactions",
   "nav.budgets": "Budgets",
   "nav.recurring": "Recurring",
+  "nav.loan": "กยศ",
   "nav.categories": "Categories",
   "nav.settings": "Settings",
   // common
@@ -180,6 +181,7 @@ const th: Dict = {
   "nav.transactions": "รายการ",
   "nav.budgets": "งบประมาณ",
   "nav.recurring": "รายการประจำ",
+  "nav.loan": "กยศ",
   "nav.categories": "หมวดหมู่",
   "nav.settings": "ตั้งค่า",
   // common

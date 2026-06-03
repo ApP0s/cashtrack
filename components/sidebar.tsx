@@ -11,6 +11,7 @@ const NAV = [
   { href: "/transactions", key: "nav.transactions", icon: "⇅" },
   { href: "/budgets", key: "nav.budgets", icon: "◴" },
   { href: "/recurring", key: "nav.recurring", icon: "↻" },
+  { href: "/loan", key: "nav.loan", icon: "🎓" },
   { href: "/categories", key: "nav.categories", icon: "🏷" },
   { href: "/settings", key: "nav.settings", icon: "⚙" },
 ];
