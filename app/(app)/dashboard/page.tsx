@@ -7,9 +7,11 @@ import {
   getCategories,
   getExpenseByCategory,
   getMonthlyTrend,
+  getRecurring,
   getTotals,
   getTransactions,
 } from "@/lib/queries";
+import { recurringSummary } from "@/lib/recurring-summary";
 import { formatMoney, formatDate, formatMonth } from "@/lib/format";
 import { ExpensePie, MonthlyBars } from "@/components/charts";
 import { TransactionModal } from "@/components/transaction-modal";
@@ -30,20 +32,42 @@ export default async function DashboardPage() {
 
   const { from, to } = monthRange();
 
-  const [allTime, month, byCategory, trend, recent, categories, budgets] =
-    await Promise.all([
-      getTotals(user.id),
-      getTotals(user.id, { from, to }),
-      getExpenseByCategory(user.id, { from, to }),
-      getMonthlyTrend(user.id, 6),
-      getTransactions(user.id, {}),
-      getCategories(user.id),
-      getBudgets(user.id),
-    ]);
+  const [
+    allTime,
+    month,
+    byCategory,
+    trend,
+    recent,
+    categories,
+    budgets,
+    recurring,
+  ] = await Promise.all([
+    getTotals(user.id),
+    getTotals(user.id, { from, to }),
+    getExpenseByCategory(user.id, { from, to }),
+    getMonthlyTrend(user.id, 6),
+    getTransactions(user.id, {}),
+    getCategories(user.id),
+    getBudgets(user.id),
+    getRecurring(user.id),
+  ]);
 
   const recentFew = recent.slice(0, 6);
   const budgetAlerts = budgets.filter((b) => b.spent / b.amount >= 0.8);
   const monthName = formatMonth(new Date(), locale);
+
+  // Recurring summary + the next few upcoming entries.
+  const recSummary = recurringSummary(recurring);
+  const freqLabel: Record<string, string> = {
+    daily: tr("rec.daily"),
+    weekly: tr("rec.weekly"),
+    monthly: tr("rec.monthly"),
+    yearly: tr("rec.yearly"),
+  };
+  const upcoming = recurring
+    .filter((r) => r.active)
+    .sort((a, b) => a.next_run.localeCompare(b.next_run))
+    .slice(0, 5);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -128,6 +152,96 @@ export default async function DashboardPage() {
           <MonthlyBars data={trend} currency={user.currency} />
         </Card>
       </section>
+
+      {/* Recurring detail */}
+      <Card
+        title={tr("dash.recurring")}
+        action={
+          <Link href="/recurring" className="text-sm font-medium text-brand">
+            {tr("dash.manage")}
+          </Link>
+        }
+      >
+        {recurring.filter((r) => r.active).length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">
+            {tr("dash.noRecurring")}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {/* Monthly-equivalent totals */}
+            <div className="grid grid-cols-3 gap-3 rounded-xl bg-subtle p-3 text-center">
+              <div>
+                <p className="text-xs text-muted">
+                  {tr("rec.totals.monthlyIncome")}
+                </p>
+                <p className="font-semibold text-income">
+                  {formatMoney(recSummary.monthlyIncome, user.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted">
+                  {tr("rec.totals.monthlyExpense")}
+                </p>
+                <p className="font-semibold text-expense">
+                  {formatMoney(recSummary.monthlyExpense, user.currency)}
+                </p>
+                <p className="text-[11px] text-muted">
+                  {tr("rec.totals.perDay", {
+                    day: formatMoney(recSummary.perDay, user.currency),
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted">{tr("rec.totals.net")}</p>
+                <p
+                  className={`font-semibold ${
+                    recSummary.net >= 0 ? "text-income" : "text-expense"
+                  }`}
+                >
+                  {formatMoney(recSummary.net, user.currency)}
+                </p>
+              </div>
+            </div>
+
+            {/* Upcoming entries */}
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
+                {tr("dash.upcoming")}
+              </p>
+              <ul className="divide-y divide-border">
+                {upcoming.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 font-medium">
+                        <span className="truncate">
+                          {r.category || r.note || tr("rec.label")}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-subtle px-2 py-0.5 text-xs text-muted">
+                          {freqLabel[r.frequency]}
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted">
+                        {tr("rec.next")}: {formatDate(r.next_run, locale)}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 font-semibold ${
+                        r.type === "income" ? "text-income" : "text-expense"
+                      }`}
+                    >
+                      {r.type === "income" ? "+" : "−"}
+                      {formatMoney(r.amount, user.currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Recent transactions */}
       <Card

@@ -4,22 +4,9 @@ import { t } from "@/lib/i18n";
 import { getCategories, getRecurring, type Recurring } from "@/lib/queries";
 import { deleteRecurringAction, toggleRecurringAction } from "@/lib/actions";
 import { generateDueRecurring } from "@/lib/recurring";
+import { recurringSummary } from "@/lib/recurring-summary";
 import { formatDate, formatMoney } from "@/lib/format";
 import { RecurringModal } from "@/components/recurring-modal";
-
-// Convert one rule's amount to its average monthly cost.
-function monthlyEquivalent(amount: number, freq: Recurring["frequency"]): number {
-  switch (freq) {
-    case "daily":
-      return (amount * 365) / 12;
-    case "weekly":
-      return (amount * 52) / 12;
-    case "monthly":
-      return amount;
-    case "yearly":
-      return amount / 12;
-  }
-}
 
 export default async function RecurringPage() {
   const [user, locale] = await Promise.all([requireUser(), getLocale()]);
@@ -43,15 +30,8 @@ export default async function RecurringPage() {
 
   // Monthly-equivalent totals across active rules only.
   const active = rules.filter((r) => r.active);
-  const monthlyIncome = active
-    .filter((r) => r.type === "income")
-    .reduce((sum, r) => sum + monthlyEquivalent(r.amount, r.frequency), 0);
-  const monthlyExpense = active
-    .filter((r) => r.type === "expense")
-    .reduce((sum, r) => sum + monthlyEquivalent(r.amount, r.frequency), 0);
-  const net = monthlyIncome - monthlyExpense;
-  const perDay = (monthlyExpense * 12) / 365;
-  const perYear = monthlyExpense * 12;
+  const { monthlyIncome, monthlyExpense, net, perDay, perYear } =
+    recurringSummary(rules);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

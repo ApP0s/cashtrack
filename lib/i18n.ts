@@ -63,6 +63,9 @@ const en: Dict = {
   "dash.noTx": "No transactions yet. Add your first one above.",
   "dash.noExpenses": "No expenses in this period.",
   "dash.uncategorized": "Uncategorized",
+  "dash.recurring": "Recurring",
+  "dash.upcoming": "Upcoming",
+  "dash.noRecurring": "No recurring entries.",
   // transactions
   "tx.title": "Transactions",
   "tx.exportCsv": "Export CSV",
@@ -227,6 +230,9 @@ const th: Dict = {
   "dash.noTx": "ยังไม่มีรายการ เพิ่มรายการแรกด้านบนได้เลย",
   "dash.noExpenses": "ไม่มีรายจ่ายในช่วงนี้",
   "dash.uncategorized": "ไม่มีหมวดหมู่",
+  "dash.recurring": "รายการประจำ",
+  "dash.upcoming": "ที่จะถึงกำหนด",
+  "dash.noRecurring": "ยังไม่มีรายการประจำ",
   // transactions
   "tx.title": "รายการ",
   "tx.exportCsv": "ส่งออก CSV",

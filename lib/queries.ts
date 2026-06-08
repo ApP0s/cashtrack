@@ -172,7 +172,8 @@ export type Recurring = {
 
 export async function getRecurring(userId: string): Promise<Recurring[]> {
   const rows = await sql<Recurring[]>`
-    select id, type, amount, category, note, frequency, next_run, active
+    select id, type, amount, category, note, frequency,
+           to_char(next_run, 'YYYY-MM-DD') as next_run, active
     from recurring
     where user_id = ${userId}
     order by active desc, next_run
