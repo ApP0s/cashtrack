@@ -106,7 +106,7 @@ export function Sidebar({
   const t = useT();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-border bg-surface md:h-dvh md:w-64 md:border-r">
+    <aside className="sticky top-0 z-30 flex max-h-dvh w-full shrink-0 flex-col border-b border-border bg-surface md:h-dvh md:w-64 md:self-start md:border-b-0 md:border-r">
       <div className="flex items-center gap-2.5 border-b border-border px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-lg font-bold text-white shadow-sm">
           ฿
@@ -114,7 +114,7 @@ export function Sidebar({
         <span className="text-lg font-bold tracking-tight">CashTrack</span>
       </div>
 
-      <nav className="flex gap-1 overflow-x-auto p-3 md:flex-1 md:flex-col md:overflow-visible">
+      <nav className="flex gap-1 overflow-x-auto p-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
         {NAV.map((item) => {
           const active = pathname === item.href;
           return (
