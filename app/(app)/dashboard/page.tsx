@@ -69,17 +69,21 @@ export default async function DashboardPage() {
     .sort((a, b) => a.next_run.localeCompare(b.next_run))
     .slice(0, 5);
 
+  const firstName = user.name?.split(" ")[0] || user.email.split("@")[0];
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-subtle p-5">
         <div>
-          <h1 className="text-2xl font-bold">{tr("dash.title")}</h1>
-          <p className="text-sm text-muted">{monthName}</p>
+          <h1 className="text-2xl font-bold">
+            {tr("dash.greeting", { name: firstName })}
+          </h1>
+          <p className="text-sm text-muted">{tr("dash.subtitle", { month: monthName })}</p>
         </div>
         <TransactionModal
           categories={categories}
           trigger={
-            <button className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark">
+            <button className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark active:scale-[0.98]">
               {tr("dash.addTransaction")}
             </button>
           }
@@ -296,10 +300,14 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+    <div
+      className={`rounded-2xl border border-l-4 border-border bg-surface p-5 shadow-sm ${
+        tone === "income" ? "border-l-income" : "border-l-expense"
+      }`}
+    >
       <p className="text-sm text-muted">{label}</p>
       <p
-        className={`mt-1 text-2xl font-bold ${
+        className={`mt-1 text-2xl font-bold tabular-nums ${
           tone === "income" ? "text-income" : "text-expense"
         }`}
       >
