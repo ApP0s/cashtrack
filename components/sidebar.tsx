@@ -42,10 +42,11 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm transition ${
                 active
-                  ? "bg-brand/10 text-brand"
-                  : "text-muted hover:bg-subtle hover:text-foreground"
+                  ? "bg-brand/10 font-semibold text-brand"
+                  : "font-medium text-muted hover:bg-subtle hover:text-foreground"
               }`}
             >
               <span className="text-base">{item.icon}</span>

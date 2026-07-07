@@ -47,6 +47,8 @@ const en: Dict = {
   "auth.newHere": "New here?",
   // dashboard
   "dash.title": "Dashboard",
+  "dash.greeting": "Welcome back, {name}",
+  "dash.subtitle": "Here's your {month} overview",
   "dash.addTransaction": "+ Add transaction",
   "dash.currentBalance": "Current balance",
   "dash.allTime": "All time",
@@ -214,6 +216,8 @@ const th: Dict = {
   "auth.newHere": "ยังไม่มีบัญชี?",
   // dashboard
   "dash.title": "แดชบอร์ด",
+  "dash.greeting": "ยินดีต้อนรับ, {name}",
+  "dash.subtitle": "ภาพรวมของ{month}",
   "dash.addTransaction": "+ เพิ่มรายการ",
   "dash.currentBalance": "ยอดคงเหลือ",
   "dash.allTime": "ทั้งหมด",
