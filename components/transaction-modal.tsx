@@ -18,7 +18,7 @@ function Save() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
+      className="rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark active:scale-[0.98] disabled:opacity-60"
     >
       {pending ? t("common.saving") : t("common.save")}
     </button>
@@ -44,9 +44,16 @@ export function TransactionModal({
     undefined,
   );
   const wasOpen = useRef(false);
+  // Track which action result we've already acted on. useActionState keeps the
+  // last result around, so without this a stale `ok` would immediately re-close
+  // the modal the next time it's opened. A new submit yields a new object.
+  const handledState = useRef<ActionState>(undefined);
 
   useEffect(() => {
-    if (open && state?.ok) setOpen(false);
+    if (open && state?.ok && state !== handledState.current) {
+      handledState.current = state;
+      setOpen(false);
+    }
   }, [state, open]);
 
   useEffect(() => {
@@ -62,11 +69,11 @@ export function TransactionModal({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+          className="animate-overlay fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-xl sm:rounded-2xl"
+            className="animate-panel w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
