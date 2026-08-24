@@ -210,6 +210,32 @@ export async function updateSettingsAction(
   return { ok: true };
 }
 
+export async function changePasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const locale = await getLocale();
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("new") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (next.length < 6) return { error: t(locale, "err.passwordMin") };
+  if (next !== confirm) return { error: t(locale, "err.passwordMismatch") };
+
+  const rows = await sql<{ password_hash: string }[]>`
+    select password_hash from users where id = ${user.id}
+  `;
+  const hash = rows[0]?.password_hash;
+  if (!hash || !(await verifyPassword(current, hash)))
+    return { error: t(locale, "err.currentWrong") };
+
+  const newHash = await hashPassword(next);
+  await sql`update users set password_hash = ${newHash} where id = ${user.id}`;
+
+  return { ok: true };
+}
+
 // ---------- Budgets ----------
 
 export async function saveBudgetAction(
@@ -307,4 +333,51 @@ export async function toggleRecurringAction(formData: FormData): Promise<void> {
     `;
   }
   revalidatePath("/recurring");
+}
+
+// ---------- Money split ----------
+
+export async function saveSplitAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const locale = await getLocale();
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("buckets") ?? "[]"));
+  } catch {
+    return { error: t(locale, "err.splitInvalid") };
+  }
+
+  if (!Array.isArray(raw) || raw.length === 0)
+    return { error: t(locale, "err.splitEmpty") };
+
+  const buckets = raw.map((b) => ({
+    name: String((b as { name?: unknown }).name ?? "").trim(),
+    percent: Number((b as { percent?: unknown }).percent),
+    color: String((b as { color?: unknown }).color ?? "#4f46e5"),
+  }));
+
+  for (const b of buckets) {
+    if (!b.name) return { error: t(locale, "err.splitName") };
+    if (!Number.isFinite(b.percent) || b.percent < 0 || b.percent > 100)
+      return { error: t(locale, "err.splitPercent") };
+  }
+
+  // Replace the user's whole plan atomically.
+  await sql.begin(async (tx) => {
+    await tx`delete from split_buckets where user_id = ${user.id}`;
+    for (let i = 0; i < buckets.length; i++) {
+      const b = buckets[i];
+      await tx`
+        insert into split_buckets (user_id, name, percent, color, sort_order)
+        values (${user.id}, ${b.name}, ${b.percent}, ${b.color}, ${i})
+      `;
+    }
+  });
+
+  revalidatePath("/split");
+  return { ok: true };
 }
