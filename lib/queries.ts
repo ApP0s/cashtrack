@@ -181,6 +181,35 @@ export async function getRecurring(userId: string): Promise<Recurring[]> {
   return rows.map((r) => ({ ...r, amount: toNum(r.amount) }));
 }
 
+export type SplitBucket = {
+  id: string;
+  name: string;
+  percent: number;
+  color: string;
+};
+
+export async function getSplitBuckets(userId: string): Promise<SplitBucket[]> {
+  try {
+    const rows = await sql<
+      { id: string; name: string; percent: string; color: string }[]
+    >`
+      select id, name, percent, color
+      from split_buckets
+      where user_id = ${userId}
+      order by sort_order, created_at
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      percent: toNum(r.percent),
+      color: r.color,
+    }));
+  } catch {
+    // Table may not exist yet (schema not applied). Treat as "no plan yet".
+    return [];
+  }
+}
+
 export type MonthlyPoint = { month: string; income: number; expense: number };
 
 export async function getMonthlyTrend(

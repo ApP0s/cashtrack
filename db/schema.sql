@@ -61,3 +61,16 @@ create table if not exists recurring (
 );
 
 create index if not exists idx_recurring_due on recurring (user_id, active, next_run);
+
+-- Money-split plan: how to divide income into buckets (e.g. 50/30/20).
+create table if not exists split_buckets (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references users(id) on delete cascade,
+  name       text not null,
+  percent    numeric(5,2) not null check (percent >= 0 and percent <= 100),
+  color      text not null default '#4f46e5',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_split_user on split_buckets (user_id, sort_order);

@@ -11,6 +11,7 @@ type IconName =
   | "transactions"
   | "budgets"
   | "recurring"
+  | "split"
   | "loan"
   | "categories"
   | "settings";
@@ -20,6 +21,7 @@ const NAV: { href: string; key: string; icon: IconName }[] = [
   { href: "/transactions", key: "nav.transactions", icon: "transactions" },
   { href: "/budgets", key: "nav.budgets", icon: "budgets" },
   { href: "/recurring", key: "nav.recurring", icon: "recurring" },
+  { href: "/split", key: "nav.split", icon: "split" },
   { href: "/loan", key: "nav.loan", icon: "loan" },
   { href: "/categories", key: "nav.categories", icon: "categories" },
   { href: "/settings", key: "nav.settings", icon: "settings" },
@@ -56,6 +58,12 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
       <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
       <path d="m7 22-4-4 4-4" />
       <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </>
+  ),
+  split: (
+    <>
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+      <path d="M22 12A10 10 0 0 0 12 2v10z" />
     </>
   ),
   loan: (
