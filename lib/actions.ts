@@ -210,6 +210,32 @@ export async function updateSettingsAction(
   return { ok: true };
 }
 
+export async function changePasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const locale = await getLocale();
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("new") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (next.length < 6) return { error: t(locale, "err.passwordMin") };
+  if (next !== confirm) return { error: t(locale, "err.passwordMismatch") };
+
+  const rows = await sql<{ password_hash: string }[]>`
+    select password_hash from users where id = ${user.id}
+  `;
+  const hash = rows[0]?.password_hash;
+  if (!hash || !(await verifyPassword(current, hash)))
+    return { error: t(locale, "err.currentWrong") };
+
+  const newHash = await hashPassword(next);
+  await sql`update users set password_hash = ${newHash} where id = ${user.id}`;
+
+  return { ok: true };
+}
+
 // ---------- Budgets ----------
 
 export async function saveBudgetAction(

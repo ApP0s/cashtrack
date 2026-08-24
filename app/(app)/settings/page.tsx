@@ -3,6 +3,7 @@ import { getLocale, getTheme } from "@/lib/locale";
 import { t } from "@/lib/i18n";
 import { logoutAction } from "@/lib/actions";
 import { SettingsForm } from "@/components/settings-form";
+import { PasswordForm } from "@/components/password-form";
 import { ThemeToggle, LanguageToggle } from "@/components/preferences";
 
 export default async function SettingsPage() {
@@ -22,6 +23,9 @@ export default async function SettingsPage() {
       </header>
 
       <SettingsForm name={user.name ?? ""} currency={user.currency} />
+
+      {/* Security: change password */}
+      <PasswordForm />
 
       {/* Appearance: theme + language */}
       <div className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">

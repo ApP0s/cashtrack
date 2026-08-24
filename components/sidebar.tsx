@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { logoutAction } from "@/lib/actions";
 import { useT } from "@/components/i18n-provider";
 import { ThemeSwitchMini } from "@/components/preferences";
+import { SearchBox } from "@/components/search-box";
 
 type IconName =
   | "dashboard"
@@ -120,6 +121,11 @@ export function Sidebar({
           ฿
         </div>
         <span className="text-lg font-bold tracking-tight">CashTrack</span>
+      </div>
+
+      {/* Global search (desktop) */}
+      <div className="hidden px-3 pt-3 md:block">
+        <SearchBox />
       </div>
 
       <nav className="flex gap-1 overflow-x-auto p-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">

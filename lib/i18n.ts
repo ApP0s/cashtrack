@@ -164,6 +164,12 @@ const en: Dict = {
   "set.dark": "Dark",
   "set.english": "English",
   "set.thai": "ไทย",
+  "set.security": "Security",
+  "set.currentPassword": "Current password",
+  "set.newPassword": "New password",
+  "set.confirmPassword": "Confirm new password",
+  "set.changePassword": "Change password",
+  "search.placeholder": "Search transactions…",
   // money split
   "split.title": "Money Split",
   "split.subtitle": "Divide your income into buckets (e.g. 50 / 30 / 20)",
@@ -202,6 +208,8 @@ const en: Dict = {
   "err.splitEmpty": "Add at least one bucket.",
   "err.splitName": "Every bucket needs a name.",
   "err.splitPercent": "Percent must be between 0 and 100.",
+  "err.currentWrong": "Current password is incorrect.",
+  "err.passwordMismatch": "New passwords do not match.",
 };
 
 const th: Dict = {
@@ -357,6 +365,12 @@ const th: Dict = {
   "set.dark": "มืด",
   "set.english": "English",
   "set.thai": "ไทย",
+  "set.security": "ความปลอดภัย",
+  "set.currentPassword": "รหัสผ่านปัจจุบัน",
+  "set.newPassword": "รหัสผ่านใหม่",
+  "set.confirmPassword": "ยืนยันรหัสผ่านใหม่",
+  "set.changePassword": "เปลี่ยนรหัสผ่าน",
+  "search.placeholder": "ค้นหารายการ…",
   // money split
   "split.title": "แบ่งเงิน",
   "split.subtitle": "แบ่งรายได้ออกเป็นส่วน ๆ (เช่น 50 / 30 / 20)",
@@ -395,6 +409,8 @@ const th: Dict = {
   "err.splitEmpty": "เพิ่มอย่างน้อยหนึ่งส่วน",
   "err.splitName": "ทุกส่วนต้องมีชื่อ",
   "err.splitPercent": "เปอร์เซ็นต์ต้องอยู่ระหว่าง 0 ถึง 100",
+  "err.currentWrong": "รหัสผ่านปัจจุบันไม่ถูกต้อง",
+  "err.passwordMismatch": "รหัสผ่านใหม่ไม่ตรงกัน",
 };
 
 const DICTS: Record<Locale, Dict> = { en, th };
