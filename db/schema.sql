@@ -29,12 +29,19 @@ create table if not exists transactions (
   amount      numeric(14,2) not null check (amount > 0),
   category    text,
   note        text,
+  method      text not null default 'cash' check (method in ('cash','online')),
   occurred_on date not null default current_date,
   created_at  timestamptz not null default now()
 );
 
+-- Add `method` to databases created before this column existed.
+alter table transactions
+  add column if not exists method text not null default 'cash'
+  check (method in ('cash','online'));
+
 create index if not exists idx_tx_user_date on transactions (user_id, occurred_on desc);
 create index if not exists idx_tx_user_type on transactions (user_id, type);
+create index if not exists idx_tx_user_method on transactions (user_id, method);
 
 -- Monthly spending limit per expense category.
 create table if not exists budgets (

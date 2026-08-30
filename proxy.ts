@@ -33,6 +33,7 @@ export async function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/daily/:path*",
     "/transactions/:path*",
     "/budgets/:path*",
     "/recurring/:path*",

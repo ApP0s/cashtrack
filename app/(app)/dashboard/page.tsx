@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/locale";
 import { t } from "@/lib/i18n";
 import {
+  getBalancesByMethod,
   getBudgets,
   getCategories,
   getExpenseByCategory,
@@ -41,6 +42,7 @@ export default async function DashboardPage() {
     categories,
     budgets,
     recurring,
+    methodBalances,
   ] = await Promise.all([
     getTotals(user.id),
     getTotals(user.id, { from, to }),
@@ -50,6 +52,7 @@ export default async function DashboardPage() {
     getCategories(user.id),
     getBudgets(user.id),
     getRecurring(user.id),
+    getBalancesByMethod(user.id),
   ]);
 
   const recentFew = recent.slice(0, 6);
@@ -108,6 +111,22 @@ export default async function DashboardPage() {
           value={formatMoney(month.expense, user.currency)}
           tone="expense"
         />
+      </section>
+
+      {/* Cash on hand vs online balance */}
+      <section className="grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-l-4 border-border border-l-income bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted">{tr("dash.cashOnHand")}</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">
+            {formatMoney(methodBalances.cash, user.currency)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-l-4 border-border border-l-brand bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted">{tr("dash.onlineBalance")}</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">
+            {formatMoney(methodBalances.online, user.currency)}
+          </p>
+        </div>
       </section>
 
       {/* Budget alerts */}

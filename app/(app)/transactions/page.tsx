@@ -185,14 +185,19 @@ export default async function TransactionsPage({
                     {formatDate(tx.occurred_on, locale)}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        tx.type === "income"
-                          ? "bg-income/10 text-income"
-                          : "bg-expense/10 text-expense"
-                      }`}
-                    >
-                      {tx.category || t(locale, "dash.uncategorized")}
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          tx.type === "income"
+                            ? "bg-income/10 text-income"
+                            : "bg-expense/10 text-expense"
+                        }`}
+                      >
+                        {tx.category || t(locale, "dash.uncategorized")}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">
+                        {t(locale, `method.${tx.method}`)}
+                      </span>
                     </span>
                   </td>
                   <td className="max-w-[14rem] truncate px-4 py-3 text-muted">

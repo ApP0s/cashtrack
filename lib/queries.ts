@@ -1,12 +1,15 @@
 import "server-only";
 import { sql } from "./db";
 
+export type Method = "cash" | "online";
+
 export type Transaction = {
   id: string;
   type: "income" | "expense";
   amount: number;
   category: string | null;
   note: string | null;
+  method: Method;
   occurred_on: string;
 };
 
@@ -55,12 +58,71 @@ export async function getTransactions(
   );
 
   const rows = await sql<Transaction[]>`
-    select id, type, amount, category, note, occurred_on
+    select id, type, amount, category, note, method, occurred_on
     from transactions
     where ${where}
     order by occurred_on desc, created_at desc
   `;
   return rows.map((r) => ({ ...r, amount: toNum(r.amount) }));
+}
+
+export type MethodBalances = { cash: number; online: number };
+
+// Net balance held as cash vs online (income minus expense per method).
+export async function getBalancesByMethod(
+  userId: string,
+): Promise<MethodBalances> {
+  const rows = await sql<{ method: string; balance: string }[]>`
+    select method,
+           coalesce(sum(case when type = 'income' then amount else -amount end), 0)
+             as balance
+    from transactions
+    where user_id = ${userId}
+    group by method
+  `;
+  const out: MethodBalances = { cash: 0, online: 0 };
+  for (const r of rows) {
+    if (r.method === "cash") out.cash = toNum(r.balance);
+    if (r.method === "online") out.online = toNum(r.balance);
+  }
+  return out;
+}
+
+export type DayBreakdown = {
+  day: string;
+  got: number;
+  spent: number;
+  net: number;
+};
+
+// Per-day got (income) / spent (expense) for the last `days` days, newest first.
+export async function getDailyBreakdown(
+  userId: string,
+  days = 7,
+): Promise<DayBreakdown[]> {
+  const rows = await sql<{ day: string; type: string; total: string }[]>`
+    select to_char(occurred_on, 'YYYY-MM-DD') as day, type, sum(amount) as total
+    from transactions
+    where user_id = ${userId}
+      and occurred_on >= current_date - ${days - 1}
+    group by 1, 2
+  `;
+
+  const map = new Map<string, DayBreakdown>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    map.set(key, { day: key, got: 0, spent: 0, net: 0 });
+  }
+  for (const r of rows) {
+    const entry = map.get(r.day);
+    if (!entry) continue;
+    if (r.type === "income") entry.got = toNum(r.total);
+    if (r.type === "expense") entry.spent = toNum(r.total);
+    entry.net = entry.got - entry.spent;
+  }
+  return Array.from(map.values()).sort((a, b) => b.day.localeCompare(a.day));
 }
 
 export type Totals = { income: number; expense: number; balance: number };

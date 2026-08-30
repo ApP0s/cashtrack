@@ -111,6 +111,8 @@ export async function saveTransactionAction(
   const amount = Number(formData.get("amount"));
   const category = String(formData.get("category") ?? "").trim() || null;
   const note = String(formData.get("note") ?? "").trim() || null;
+  const methodRaw = String(formData.get("method") ?? "cash");
+  const method = methodRaw === "online" ? "online" : "cash";
   const occurredOn = String(formData.get("occurred_on") ?? "").trim();
   const locale = await getLocale();
 
@@ -124,18 +126,19 @@ export async function saveTransactionAction(
     await sql`
       update transactions
       set type = ${type}, amount = ${amount}, category = ${category},
-          note = ${note}, occurred_on = ${occurredOn}
+          note = ${note}, method = ${method}, occurred_on = ${occurredOn}
       where id = ${id} and user_id = ${user.id}
     `;
   } else {
     await sql`
-      insert into transactions (user_id, type, amount, category, note, occurred_on)
-      values (${user.id}, ${type}, ${amount}, ${category}, ${note}, ${occurredOn})
+      insert into transactions (user_id, type, amount, category, note, method, occurred_on)
+      values (${user.id}, ${type}, ${amount}, ${category}, ${note}, ${method}, ${occurredOn})
     `;
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
+  revalidatePath("/daily");
   return { ok: true };
 }
 
