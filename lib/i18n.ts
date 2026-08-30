@@ -14,6 +14,7 @@ type Dict = Record<string, string>;
 const en: Dict = {
   // nav
   "nav.dashboard": "Dashboard",
+  "nav.daily": "Daily",
   "nav.transactions": "Transactions",
   "nav.budgets": "Budgets",
   "nav.recurring": "Recurring",
@@ -96,6 +97,22 @@ const en: Dict = {
   "txm.optionalDesc": "Optional description",
   "txm.expense": "Expense",
   "txm.income": "Income",
+  "txm.method": "Payment method",
+  // method + daily
+  "method.cash": "Cash",
+  "method.online": "Online",
+  "dash.cashOnHand": "Cash on hand",
+  "dash.onlineBalance": "Online balance",
+  "daily.title": "Daily money",
+  "daily.subtitle": "Log the money you get each day — cash or online",
+  "daily.quickAdd": "Add money you got",
+  "daily.note": "Note (optional)",
+  "daily.addBtn": "Add to today",
+  "daily.today": "Today",
+  "daily.got": "Got",
+  "daily.spent": "Spent",
+  "daily.left": "Left",
+  "daily.recent": "Last 7 days",
   // budgets
   "bud.title": "Budgets",
   "bud.subtitle": "Monthly spending limits per category",
@@ -215,6 +232,7 @@ const en: Dict = {
 const th: Dict = {
   // nav
   "nav.dashboard": "แดชบอร์ด",
+  "nav.daily": "รายวัน",
   "nav.transactions": "รายการ",
   "nav.budgets": "งบประมาณ",
   "nav.recurring": "รายการประจำ",
@@ -297,6 +315,22 @@ const th: Dict = {
   "txm.optionalDesc": "คำอธิบาย (ไม่บังคับ)",
   "txm.expense": "รายจ่าย",
   "txm.income": "รายรับ",
+  "txm.method": "ช่องทาง",
+  // method + daily
+  "method.cash": "เงินสด",
+  "method.online": "ออนไลน์",
+  "dash.cashOnHand": "เงินสดในมือ",
+  "dash.onlineBalance": "ยอดออนไลน์",
+  "daily.title": "เงินรายวัน",
+  "daily.subtitle": "บันทึกเงินที่ได้รับในแต่ละวัน — เงินสดหรือออนไลน์",
+  "daily.quickAdd": "เพิ่มเงินที่ได้รับ",
+  "daily.note": "บันทึก (ไม่บังคับ)",
+  "daily.addBtn": "เพิ่มเข้าวันนี้",
+  "daily.today": "วันนี้",
+  "daily.got": "ได้รับ",
+  "daily.spent": "ใช้ไป",
+  "daily.left": "คงเหลือ",
+  "daily.recent": "7 วันล่าสุด",
   // budgets
   "bud.title": "งบประมาณ",
   "bud.subtitle": "วงเงินใช้จ่ายต่อเดือนแยกตามหมวดหมู่",

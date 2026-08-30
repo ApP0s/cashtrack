@@ -39,6 +39,9 @@ export function TransactionModal({
   const [type, setType] = useState<"income" | "expense">(
     transaction?.type ?? "expense",
   );
+  const [method, setMethod] = useState<"cash" | "online">(
+    transaction?.method ?? "cash",
+  );
   const [state, formAction] = useActionState<ActionState, FormData>(
     saveTransactionAction,
     undefined,
@@ -57,7 +60,10 @@ export function TransactionModal({
   }, [state, open]);
 
   useEffect(() => {
-    if (open && !wasOpen.current) setType(transaction?.type ?? "expense");
+    if (open && !wasOpen.current) {
+      setType(transaction?.type ?? "expense");
+      setMethod(transaction?.method ?? "cash");
+    }
     wasOpen.current = open;
   }, [open, transaction]);
 
@@ -94,6 +100,7 @@ export function TransactionModal({
                 <input type="hidden" name="id" value={transaction.id} />
               )}
               <input type="hidden" name="type" value={type} />
+              <input type="hidden" name="method" value={method} />
 
               {/* Type toggle */}
               <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
@@ -119,6 +126,37 @@ export function TransactionModal({
                 >
                   {t("txm.income")}
                 </button>
+              </div>
+
+              {/* Method toggle: cash vs online */}
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.method")}
+                </label>
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
+                  <button
+                    type="button"
+                    onClick={() => setMethod("cash")}
+                    className={`rounded-md py-2 text-sm font-semibold transition ${
+                      method === "cash"
+                        ? "bg-surface text-brand shadow-sm"
+                        : "text-muted"
+                    }`}
+                  >
+                    {t("method.cash")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMethod("online")}
+                    className={`rounded-md py-2 text-sm font-semibold transition ${
+                      method === "online"
+                        ? "bg-surface text-brand shadow-sm"
+                        : "text-muted"
+                    }`}
+                  >
+                    {t("method.online")}
+                  </button>
+                </div>
               </div>
 
               <div>
