@@ -104,7 +104,7 @@ export async function getDailyBreakdown(
     select to_char(occurred_on, 'YYYY-MM-DD') as day, type, sum(amount) as total
     from transactions
     where user_id = ${userId}
-      and occurred_on >= current_date - ${days - 1}
+      and occurred_on >= current_date - ${`${days - 1} days`}::interval
     group by 1, 2
   `;
 
