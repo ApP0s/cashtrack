@@ -39,6 +39,9 @@ export function RecurringModal({
   const [type, setType] = useState<"income" | "expense">(
     rule?.type ?? "expense",
   );
+  const [method, setMethod] = useState<"cash" | "online">(
+    rule?.method ?? "cash",
+  );
   const [state, formAction] = useActionState<ActionState, FormData>(
     saveRecurringAction,
     undefined,
@@ -57,7 +60,10 @@ export function RecurringModal({
   }, [state, open]);
 
   useEffect(() => {
-    if (open && !wasOpen.current) setType(rule?.type ?? "expense");
+    if (open && !wasOpen.current) {
+      setType(rule?.type ?? "expense");
+      setMethod(rule?.method ?? "cash");
+    }
     wasOpen.current = open;
   }, [open, rule]);
 
@@ -92,6 +98,7 @@ export function RecurringModal({
             <form action={formAction} className="space-y-4">
               {rule && <input type="hidden" name="id" value={rule.id} />}
               <input type="hidden" name="type" value={type} />
+              <input type="hidden" name="method" value={method} />
 
               <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
                 <button
@@ -116,6 +123,37 @@ export function RecurringModal({
                 >
                   {t("txm.income")}
                 </button>
+              </div>
+
+              {/* Method toggle: cash vs online */}
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  {t("txm.method")}
+                </label>
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-subtle p-1">
+                  <button
+                    type="button"
+                    onClick={() => setMethod("cash")}
+                    className={`rounded-md py-2 text-sm font-semibold transition ${
+                      method === "cash"
+                        ? "bg-surface text-brand shadow-sm"
+                        : "text-muted"
+                    }`}
+                  >
+                    {t("method.cash")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMethod("online")}
+                    className={`rounded-md py-2 text-sm font-semibold transition ${
+                      method === "online"
+                        ? "bg-surface text-brand shadow-sm"
+                        : "text-muted"
+                    }`}
+                  >
+                    {t("method.online")}
+                  </button>
+                </div>
               </div>
 
               <div>

@@ -32,6 +32,7 @@ type DueRule = {
   category: string | null;
   note: string | null;
   frequency: Freq;
+  method: "cash" | "online";
   next_run: string;
 };
 
@@ -47,8 +48,8 @@ async function materialize(rules: DueRule[], today: string): Promise<number> {
       // Cap iterations to avoid a runaway loop on stale daily rules.
       for (let i = 0; i < 1000 && runDate <= today; i++) {
         await tx`
-          insert into transactions (user_id, type, amount, category, note, occurred_on)
-          values (${rule.user_id}, ${rule.type}, ${rule.amount}, ${rule.category}, ${rule.note}, ${runDate})
+          insert into transactions (user_id, type, amount, category, note, method, occurred_on)
+          values (${rule.user_id}, ${rule.type}, ${rule.amount}, ${rule.category}, ${rule.note}, ${rule.method}, ${runDate})
         `;
         created++;
         runDate = advance(runDate, rule.frequency);
@@ -72,7 +73,7 @@ export async function generateDueRecurring(userId: string): Promise<number> {
   `;
 
   const due = await sql<DueRule[]>`
-    select id, user_id, type, amount, category, note, frequency,
+    select id, user_id, type, amount, category, note, frequency, method,
            to_char(next_run, 'YYYY-MM-DD') as next_run
     from recurring
     where user_id = ${userId} and active = true and next_run <= current_date
@@ -92,7 +93,7 @@ export async function generateAllDueRecurring(): Promise<number> {
   `;
 
   const due = await sql<DueRule[]>`
-    select id, user_id, type, amount, category, note, frequency,
+    select id, user_id, type, amount, category, note, frequency, method,
            to_char(next_run, 'YYYY-MM-DD') as next_run
     from recurring
     where active = true and next_run <= current_date

@@ -288,6 +288,8 @@ export async function saveRecurringAction(
   const category = String(formData.get("category") ?? "").trim() || null;
   const note = String(formData.get("note") ?? "").trim() || null;
   const frequency = String(formData.get("frequency") ?? "");
+  const methodRaw = String(formData.get("method") ?? "cash");
+  const method = methodRaw === "online" ? "online" : "cash";
   const nextRun = String(formData.get("next_run") ?? "").trim();
   const locale = await getLocale();
 
@@ -303,13 +305,14 @@ export async function saveRecurringAction(
     await sql`
       update recurring
       set type = ${type}, amount = ${amount}, category = ${category},
-          note = ${note}, frequency = ${frequency}, next_run = ${nextRun}
+          note = ${note}, frequency = ${frequency}, method = ${method},
+          next_run = ${nextRun}
       where id = ${id} and user_id = ${user.id}
     `;
   } else {
     await sql`
-      insert into recurring (user_id, type, amount, category, note, frequency, next_run)
-      values (${user.id}, ${type}, ${amount}, ${category}, ${note}, ${frequency}, ${nextRun})
+      insert into recurring (user_id, type, amount, category, note, frequency, method, next_run)
+      values (${user.id}, ${type}, ${amount}, ${category}, ${note}, ${frequency}, ${method}, ${nextRun})
     `;
   }
 

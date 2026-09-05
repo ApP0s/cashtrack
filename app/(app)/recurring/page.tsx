@@ -103,6 +103,7 @@ export default async function RecurringPage() {
               locale={locale}
               categories={categories}
               freqLabel={freqLabel[r.frequency]}
+              methodLabel={tr(`method.${r.method}`)}
               nextLabel={tr("rec.next")}
               pausedLabel={tr("rec.paused")}
               pauseLabel={tr("rec.pause")}
@@ -124,6 +125,7 @@ function RecurringRow({
   locale,
   categories,
   freqLabel,
+  methodLabel,
   nextLabel,
   pausedLabel,
   pauseLabel,
@@ -137,6 +139,7 @@ function RecurringRow({
   locale: "en" | "th";
   categories: Awaited<ReturnType<typeof getCategories>>;
   freqLabel: string;
+  methodLabel: string;
   nextLabel: string;
   pausedLabel: string;
   pauseLabel: string;
@@ -158,6 +161,9 @@ function RecurringRow({
           </span>
           <span className="rounded-full bg-subtle px-2 py-0.5 text-xs text-muted">
             {freqLabel}
+          </span>
+          <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
+            {methodLabel}
           </span>
           {!rule.active && (
             <span className="rounded-full bg-subtle px-2 py-0.5 text-xs">
