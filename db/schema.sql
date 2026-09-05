@@ -62,10 +62,16 @@ create table if not exists recurring (
   category   text,
   note       text,
   frequency  text not null check (frequency in ('daily','weekly','monthly','yearly')),
+  method     text not null default 'cash' check (method in ('cash','online')),
   next_run   date not null,
   active     boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+-- Add `method` to databases created before this column existed.
+alter table recurring
+  add column if not exists method text not null default 'cash'
+  check (method in ('cash','online'));
 
 create index if not exists idx_recurring_due on recurring (user_id, active, next_run);
 

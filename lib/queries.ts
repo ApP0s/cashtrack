@@ -228,13 +228,14 @@ export type Recurring = {
   category: string | null;
   note: string | null;
   frequency: "daily" | "weekly" | "monthly" | "yearly";
+  method: Method;
   next_run: string;
   active: boolean;
 };
 
 export async function getRecurring(userId: string): Promise<Recurring[]> {
   const rows = await sql<Recurring[]>`
-    select id, type, amount, category, note, frequency,
+    select id, type, amount, category, note, frequency, method,
            to_char(next_run, 'YYYY-MM-DD') as next_run, active
     from recurring
     where user_id = ${userId}
