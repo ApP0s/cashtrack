@@ -139,6 +139,7 @@ export async function saveTransactionAction(
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
   revalidatePath("/daily");
+  revalidatePath("/summary");
   return { ok: true };
 }
 
@@ -150,6 +151,8 @@ export async function deleteTransactionAction(formData: FormData): Promise<void>
   }
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
+  revalidatePath("/daily");
+  revalidatePath("/summary");
 }
 
 // ---------- Categories ----------
@@ -385,5 +388,51 @@ export async function saveSplitAction(
   });
 
   revalidatePath("/split");
+  return { ok: true };
+}
+
+// ---------- Period cut-off ("ตัดยอด") ----------
+
+function revalidateBalances() {
+  revalidatePath("/dashboard");
+  revalidatePath("/daily");
+  revalidatePath("/summary");
+}
+
+// Moves the current balance "into the safe": records a cut-off so balances
+// restart at 0. No transaction is touched or deleted.
+export async function closePeriodAction(): Promise<ActionState> {
+  const user = await requireUser();
+  const locale = await getLocale();
+
+  const [{ n }] = await sql<{ n: number }[]>`
+    select count(*)::int as n
+    from transactions
+    where user_id = ${user.id}
+      and created_at > coalesce(
+        (select max(closed_at) from closings where user_id = ${user.id}),
+        '-infinity'::timestamptz
+      )
+  `;
+  if (n === 0) return { error: t(locale, "close.nothing") };
+
+  await sql`insert into closings (user_id) values (${user.id})`;
+  revalidateBalances();
+  return { ok: true };
+}
+
+// Removes the latest cut-off, returning that money to the current balance.
+export async function undoClosingAction(): Promise<ActionState> {
+  const user = await requireUser();
+  await sql`
+    delete from closings
+    where id = (
+      select id from closings
+      where user_id = ${user.id}
+      order by closed_at desc
+      limit 1
+    )
+  `;
+  revalidateBalances();
   return { ok: true };
 }

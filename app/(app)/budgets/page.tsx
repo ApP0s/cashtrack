@@ -85,7 +85,7 @@ function BudgetRow({
           <input type="hidden" name="id" value={budget.id} />
           <button
             type="submit"
-            className="text-xs font-medium text-muted hover:text-expense"
+            className="-mr-2 min-h-9 rounded-md px-2 text-xs font-medium text-muted hover:text-expense"
           >
             {removeLabel}
           </button>
@@ -99,7 +99,7 @@ function BudgetRow({
         />
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-sm">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm tabular-nums">
         <span className="text-muted">
           {formatMoney(budget.spent, currency)} {ofLabel}{" "}
           {formatMoney(budget.amount, currency)}

@@ -4,10 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveTransactionAction, type ActionState } from "@/lib/actions";
 import { useT } from "@/components/i18n-provider";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { localTodayISO } from "@/lib/dates";
 
 function Save() {
   const { pending } = useFormStatus();
@@ -39,14 +36,17 @@ export function DailyLogger() {
   return (
     <form
       ref={formRef}
-      action={formAction}
-      className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm"
+      action={(fd: FormData) => {
+        // Stamp the date when submitting, in the user's local timezone.
+        fd.set("occurred_on", localTodayISO());
+        formAction(fd);
+      }}
+      className="space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
       <h2 className="font-semibold">{t("daily.quickAdd")}</h2>
 
       {/* Fixed: this always logs income received today */}
       <input type="hidden" name="type" value="income" />
-      <input type="hidden" name="occurred_on" value={todayISO()} />
       <input type="hidden" name="method" value={method} />
 
       <div className="flex items-center gap-2">

@@ -35,12 +35,21 @@ export function formatMoney(amount: number, currency = "THB"): string {
   );
 }
 
+// A plain "YYYY-MM-DD" is a calendar date, parsed as UTC midnight — format it
+// in UTC too so it never shifts a day depending on where the code runs.
+function calendarZone(date: string | Date): { timeZone?: string } {
+  return typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? { timeZone: "UTC" }
+    : {};
+}
+
 export function formatDate(date: string | Date, locale?: Locale): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
+    ...calendarZone(date),
   });
 }
 
@@ -49,5 +58,20 @@ export function formatMonth(date: string | Date, locale?: Locale): string {
   return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",
+    ...calendarZone(date),
+  });
+}
+
+/** Month name only, e.g. "October" / "ตุลาคม". `month` is 1-12. */
+export function formatMonthName(month: number, locale?: Locale): string {
+  return new Date(2000, month - 1, 1).toLocaleDateString(intlLocale(locale), {
+    month: "long",
+  });
+}
+
+/** A year label in the locale's era — Thai renders the Buddhist year (2569). */
+export function formatYear(year: number, locale?: Locale): string {
+  return new Date(year, 0, 1).toLocaleDateString(intlLocale(locale), {
+    year: "numeric",
   });
 }

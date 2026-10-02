@@ -1,22 +1,19 @@
 import { requireUser } from "@/lib/auth";
-import { getLocale } from "@/lib/locale";
+import { getLocale, getToday } from "@/lib/locale";
 import { t } from "@/lib/i18n";
+import { monthRangeOf } from "@/lib/dates";
 import { getSplitBuckets, getTotals } from "@/lib/queries";
 import { SplitPlanner } from "@/components/split-planner";
 
-function monthRange() {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(first), to: iso(last) };
-}
-
 export default async function SplitPage() {
-  const [user, locale] = await Promise.all([requireUser(), getLocale()]);
+  const [user, locale, today] = await Promise.all([
+    requireUser(),
+    getLocale(),
+    getToday(),
+  ]);
   const tr = (k: string) => t(locale, k);
 
-  const { from, to } = monthRange();
+  const { from, to } = monthRangeOf(today);
   const [buckets, month] = await Promise.all([
     getSplitBuckets(user.id),
     getTotals(user.id, { from, to }),

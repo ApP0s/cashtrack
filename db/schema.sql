@@ -87,3 +87,14 @@ create table if not exists split_buckets (
 );
 
 create index if not exists idx_split_user on split_buckets (user_id, sort_order);
+
+-- Period cut-offs ("ตัดยอด"). Balances only count transactions recorded after
+-- the latest cut-off; everything recorded before it is treated as "the safe".
+-- Transactions are never deleted, so history and monthly/yearly totals stay intact.
+create table if not exists closings (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references users(id) on delete cascade,
+  closed_at  timestamptz not null default now()
+);
+
+create index if not exists idx_closings_user on closings (user_id, closed_at desc);

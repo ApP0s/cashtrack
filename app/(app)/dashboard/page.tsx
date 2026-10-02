@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getLocale } from "@/lib/locale";
+import { getLocale, getToday } from "@/lib/locale";
+import { monthRangeOf } from "@/lib/dates";
 import { t } from "@/lib/i18n";
 import {
   getBalancesByMethod,
   getBudgets,
   getCategories,
   getExpenseByCategory,
+  getLastClosedAt,
   getMonthlyTrend,
   getRecurring,
   getTotals,
@@ -16,25 +18,23 @@ import { recurringSummary } from "@/lib/recurring-summary";
 import { formatMoney, formatDate, formatMonth } from "@/lib/format";
 import { ExpensePie, MonthlyBars } from "@/components/charts";
 import { TransactionModal } from "@/components/transaction-modal";
-
-function monthRange() {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(first), to: iso(last) };
-}
+import { LocalTime } from "@/components/local-time";
 
 export default async function DashboardPage() {
-  const [user, locale] = await Promise.all([requireUser(), getLocale()]);
+  const [user, locale, today] = await Promise.all([
+    requireUser(),
+    getLocale(),
+    getToday(),
+  ]);
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, k, vars);
   // Recurring entries are materialized by a daily cron (see app/api/cron/recurring).
 
-  const { from, to } = monthRange();
+  // "This month" in the user's timezone, not the server's.
+  const { from, to } = monthRangeOf(today);
 
   const [
-    allTime,
+    lastClosedAt,
     month,
     byCategory,
     trend,
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     recurring,
     methodBalances,
   ] = await Promise.all([
-    getTotals(user.id),
+    getLastClosedAt(user.id),
     getTotals(user.id, { from, to }),
     getExpenseByCategory(user.id, { from, to }),
     getMonthlyTrend(user.id, 6),
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
   const recentFew = recent.slice(0, 6);
   const budgetAlerts = budgets.filter((b) => b.spent / b.amount >= 0.8);
-  const monthName = formatMonth(new Date(), locale);
+  const monthName = formatMonth(from, locale);
 
   // Recurring summary + the next few upcoming entries.
   const recSummary = recurringSummary(recurring);
@@ -74,9 +74,20 @@ export default async function DashboardPage() {
 
   const firstName = user.name?.split(" ")[0] || user.email.split("@")[0];
 
+  // Balance only counts money recorded since the last cut-off ("ตัดยอด").
+  const balance = methodBalances.cash + methodBalances.online;
+  const balanceHint = lastClosedAt ? (
+    <>
+      {tr("dash.sinceCutoff").split("{date}")[0]}
+      <LocalTime iso={lastClosedAt.toISOString()} mode="date" />
+    </>
+  ) : (
+    tr("dash.allTime")
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-subtle p-5">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-subtle p-4 sm:p-5">
         <div>
           <h1 className="text-2xl font-bold">
             {tr("dash.greeting", { name: firstName })}
@@ -94,12 +105,13 @@ export default async function DashboardPage() {
       </header>
 
       {/* Summary cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard
           label={tr("dash.currentBalance")}
-          value={formatMoney(allTime.balance, user.currency)}
-          tone={allTime.balance >= 0 ? "income" : "expense"}
-          hint={tr("dash.allTime")}
+          value={formatMoney(balance, user.currency)}
+          tone={balance >= 0 ? "income" : "expense"}
+          hint={balanceHint}
+          wide
         />
         <StatCard
           label={tr("dash.incomeThisMonth")}
@@ -113,19 +125,29 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* Cash on hand vs online balance */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-l-4 border-border border-l-income bg-surface p-5 shadow-sm">
-          <p className="text-sm text-muted">{tr("dash.cashOnHand")}</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums">
-            {formatMoney(methodBalances.cash, user.currency)}
-          </p>
+      {/* Cash on hand vs online balance (since the last cut-off) */}
+      <section className="space-y-2">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="min-w-0 rounded-2xl border border-l-4 border-border border-l-income bg-surface p-4 shadow-sm sm:p-5">
+            <p className="text-sm text-muted">{tr("dash.cashOnHand")}</p>
+            <p className="mt-1 text-xl font-bold tabular-nums [overflow-wrap:anywhere] sm:text-2xl">
+              {formatMoney(methodBalances.cash, user.currency)}
+            </p>
+          </div>
+          <div className="min-w-0 rounded-2xl border border-l-4 border-border border-l-brand bg-surface p-4 shadow-sm sm:p-5">
+            <p className="text-sm text-muted">{tr("dash.onlineBalance")}</p>
+            <p className="mt-1 text-xl font-bold tabular-nums [overflow-wrap:anywhere] sm:text-2xl">
+              {formatMoney(methodBalances.online, user.currency)}
+            </p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-l-4 border-border border-l-brand bg-surface p-5 shadow-sm">
-          <p className="text-sm text-muted">{tr("dash.onlineBalance")}</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums">
-            {formatMoney(methodBalances.online, user.currency)}
-          </p>
+        <div className="text-right">
+          <Link
+            href="/summary"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-brand hover:bg-brand/10"
+          >
+            {tr("dash.viewTotals")}
+          </Link>
         </div>
       </section>
 
@@ -192,32 +214,32 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-4">
             {/* Monthly-equivalent totals */}
-            <div className="grid grid-cols-3 gap-3 rounded-xl bg-subtle p-3 text-center">
-              <div>
+            <div className="grid grid-cols-3 gap-2 rounded-xl bg-subtle p-3 text-center sm:gap-3">
+              <div className="min-w-0">
                 <p className="text-xs text-muted">
                   {tr("rec.totals.monthlyIncome")}
                 </p>
-                <p className="font-semibold text-income">
+                <p className="text-sm font-semibold tabular-nums text-income [overflow-wrap:anywhere] sm:text-base">
                   {formatMoney(recSummary.monthlyIncome, user.currency)}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted">
                   {tr("rec.totals.monthlyExpense")}
                 </p>
-                <p className="font-semibold text-expense">
+                <p className="text-sm font-semibold tabular-nums text-expense [overflow-wrap:anywhere] sm:text-base">
                   {formatMoney(recSummary.monthlyExpense, user.currency)}
                 </p>
-                <p className="text-[11px] text-muted">
+                <p className="text-xs text-muted [overflow-wrap:anywhere]">
                   {tr("rec.totals.perDay", {
                     day: formatMoney(recSummary.perDay, user.currency),
                   })}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted">{tr("rec.totals.net")}</p>
                 <p
-                  className={`font-semibold ${
+                  className={`text-sm font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-base ${
                     recSummary.net >= 0 ? "text-income" : "text-expense"
                   }`}
                 >
@@ -312,21 +334,26 @@ function StatCard({
   value,
   tone,
   hint,
+  wide = false,
 }: {
   label: string;
   value: string;
   tone: "income" | "expense";
-  hint?: string;
+  hint?: React.ReactNode;
+  /** Full width on phones (the 2-column grid) — used for the balance. */
+  wide?: boolean;
 }) {
   return (
     <div
-      className={`rounded-2xl border border-l-4 border-border bg-surface p-5 shadow-sm ${
+      className={`min-w-0 rounded-2xl border border-l-4 border-border bg-surface p-4 shadow-sm sm:p-5 ${
         tone === "income" ? "border-l-income" : "border-l-expense"
-      }`}
+      } ${wide ? "col-span-2 sm:col-span-1" : ""}`}
     >
       <p className="text-sm text-muted">{label}</p>
       <p
-        className={`mt-1 text-2xl font-bold tabular-nums ${
+        className={`mt-1 font-bold tabular-nums [overflow-wrap:anywhere] ${
+          wide ? "text-2xl" : "text-xl sm:text-2xl"
+        } ${
           tone === "income" ? "text-income" : "text-expense"
         }`}
       >
@@ -349,7 +376,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="font-semibold">{title}</h2>

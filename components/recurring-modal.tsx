@@ -6,10 +6,10 @@ import { useFormStatus } from "react-dom";
 import { saveRecurringAction, type ActionState } from "@/lib/actions";
 import type { Category, Recurring } from "@/lib/queries";
 import { useT } from "@/components/i18n-provider";
+import { localTodayISO } from "@/lib/dates";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+// Local date, not UTC — in Thailand toISOString() is still "yesterday" until 7am.
+const todayISO = localTodayISO;
 
 function Save() {
   const { pending } = useFormStatus();
@@ -79,7 +79,7 @@ export function RecurringModal({
           onClick={() => setOpen(false)}
         >
           <div
-            className="animate-panel w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-xl sm:rounded-2xl"
+            className="animate-panel max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -88,7 +88,7 @@ export function RecurringModal({
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-2xl leading-none text-muted hover:text-foreground"
+                className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-2xl leading-none text-muted hover:bg-subtle hover:text-foreground"
                 aria-label="Close"
               >
                 ×
