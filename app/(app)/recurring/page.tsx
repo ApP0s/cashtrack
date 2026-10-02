@@ -155,7 +155,7 @@ function RecurringRow({
       }`}
     >
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-medium">
             {rule.category || rule.note || fallbackLabel}
           </span>
@@ -177,7 +177,7 @@ function RecurringRow({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span
           className={`font-semibold ${
             rule.type === "income" ? "text-income" : "text-expense"
@@ -190,7 +190,7 @@ function RecurringRow({
           <input type="hidden" name="id" value={rule.id} />
           <button
             type="submit"
-            className="rounded-md px-2 py-1 text-xs font-medium text-muted hover:bg-subtle"
+            className="min-h-9 rounded-md px-3 py-1.5 text-xs font-medium text-muted hover:bg-subtle"
           >
             {rule.active ? pauseLabel : resumeLabel}
           </button>
@@ -199,7 +199,7 @@ function RecurringRow({
           categories={categories}
           rule={rule}
           trigger={
-            <button className="rounded-md px-2 py-1 text-xs font-medium text-brand hover:bg-brand/10">
+            <button className="min-h-9 rounded-md px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand/10">
               {editLabel}
             </button>
           }
@@ -208,7 +208,7 @@ function RecurringRow({
           <input type="hidden" name="id" value={rule.id} />
           <button
             type="submit"
-            className="rounded-md px-2 py-1 text-xs font-medium text-expense hover:bg-expense/10"
+            className="min-h-9 rounded-md px-3 py-1.5 text-xs font-medium text-expense hover:bg-expense/10"
           >
             {deleteLabel}
           </button>

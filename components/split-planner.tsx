@@ -103,18 +103,21 @@ export function SplitPlanner({
           <p className="mt-1 text-xs text-muted">{t("split.baseHint")}</p>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          {/* Column headers */}
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+        <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+          {/* Column headers (from sm up; phones stack each row) */}
+          <div className="hidden items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted sm:flex">
             <span className="w-6" aria-hidden="true" />
             <span className="flex-1">{t("split.bucketName")}</span>
             <span className="w-16 text-right">{t("split.percent")}</span>
             <span className="w-28 text-right">{t("split.amount")}</span>
-            <span className="w-8" aria-hidden="true" />
+            <span className="w-9" aria-hidden="true" />
           </div>
 
           {buckets.map((b, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div
+              key={i}
+              className="flex flex-wrap items-center gap-2 max-sm:border-b max-sm:border-border max-sm:pb-3 sm:flex-nowrap"
+            >
               <input
                 type="color"
                 value={b.color}
@@ -129,27 +132,32 @@ export function SplitPlanner({
                 aria-label={t("split.bucketName")}
                 className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="1"
-                value={b.percent}
-                onChange={(e) =>
-                  update(i, { percent: Number(e.target.value) })
-                }
-                aria-label={t("split.percent")}
-                className="w-16 rounded-lg border border-border px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-              />
-              <span className="w-28 text-right text-sm tabular-nums text-muted">
-                {formatMoney((baseNum * (Number(b.percent) || 0)) / 100, currency)}
-              </span>
+              {/* % + amount: own line on phones, inline from sm */}
+              <div className="flex items-center gap-2 max-sm:order-last max-sm:w-full max-sm:pl-8">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={b.percent}
+                  onChange={(e) =>
+                    update(i, { percent: Number(e.target.value) })
+                  }
+                  aria-label={t("split.percent")}
+                  className="w-16 rounded-lg border border-border px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+                <span className="text-sm text-muted sm:hidden">%</span>
+                <span className="ml-auto text-right text-sm tabular-nums text-muted sm:ml-0 sm:w-28">
+                  {formatMoney((baseNum * (Number(b.percent) || 0)) / 100, currency)}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => remove(i)}
                 disabled={buckets.length <= 1}
                 aria-label={t("split.remove")}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-expense/10 hover:text-expense disabled:opacity-30 disabled:hover:bg-transparent"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-expense/10 hover:text-expense disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <svg
                   viewBox="0 0 24 24"

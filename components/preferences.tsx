@@ -9,6 +9,12 @@ function writeCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
 }
 
+/** Apply a theme immediately and remember it. */
+export function applyTheme(next: "light" | "dark") {
+  document.documentElement.classList.toggle("dark", next === "dark");
+  writeCookie("theme", next);
+}
+
 export function ThemeToggle({ initial }: { initial: "light" | "dark" }) {
   const t = useT();
   const [theme, setTheme] = useState<"light" | "dark">(initial);

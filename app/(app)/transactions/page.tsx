@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/locale";
-import { t } from "@/lib/i18n";
+import { t, type Locale } from "@/lib/i18n";
 import {
   getCategories,
   getTotals,
   getTransactions,
+  type Category,
+  type Transaction,
   type TxFilters,
 } from "@/lib/queries";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -136,23 +138,23 @@ export default async function TransactionsPage({
       </form>
 
       {/* Filtered totals */}
-      <section className="grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-xl border border-border bg-surface p-3">
+      <section className="grid grid-cols-3 gap-2 text-center sm:gap-3">
+        <div className="min-w-0 rounded-xl border border-border bg-surface px-1.5 py-2.5 sm:p-3">
           <p className="text-xs text-muted">{tr("tx.income")}</p>
-          <p className="font-semibold text-income">
+          <p className="text-sm font-semibold tabular-nums text-income [overflow-wrap:anywhere] sm:text-base">
             {formatMoney(totals.income, user.currency)}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-3">
+        <div className="min-w-0 rounded-xl border border-border bg-surface px-1.5 py-2.5 sm:p-3">
           <p className="text-xs text-muted">{tr("tx.expense")}</p>
-          <p className="font-semibold text-expense">
+          <p className="text-sm font-semibold tabular-nums text-expense [overflow-wrap:anywhere] sm:text-base">
             {formatMoney(totals.expense, user.currency)}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-3">
+        <div className="min-w-0 rounded-xl border border-border bg-surface px-1.5 py-2.5 sm:p-3">
           <p className="text-xs text-muted">{tr("tx.net")}</p>
           <p
-            className={`font-semibold ${
+            className={`text-sm font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-base ${
               totals.balance >= 0 ? "text-income" : "text-expense"
             }`}
           >
@@ -161,84 +163,145 @@ export default async function TransactionsPage({
         </div>
       </section>
 
-      {/* List */}
+      {/* List: cards on phones, a table from md up */}
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         {transactions.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">
             {tr("tx.noMatch")}
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-subtle text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3">{tr("tx.date")}</th>
-                <th className="px-4 py-3">{tr("tx.category")}</th>
-                <th className="px-4 py-3">{tr("tx.note")}</th>
-                <th className="px-4 py-3 text-right">{tr("tx.amount")}</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
+          <>
+            <ul className="divide-y divide-border md:hidden">
               {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-subtle-hover">
-                  <td className="whitespace-nowrap px-4 py-3 text-muted">
-                    {formatDate(tx.occurred_on, locale)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                          tx.type === "income"
-                            ? "bg-income/10 text-income"
-                            : "bg-expense/10 text-expense"
-                        }`}
-                      >
-                        {tx.category || t(locale, "dash.uncategorized")}
-                      </span>
-                      <span className="inline-flex items-center rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">
-                        {t(locale, `method.${tx.method}`)}
-                      </span>
+                <li key={tx.id} className="flex items-start justify-between gap-3 p-4">
+                  <div className="min-w-0 space-y-1">
+                    <TxChips tx={tx} locale={locale} />
+                    {tx.note && (
+                      <p className="truncate text-sm text-muted">{tx.note}</p>
+                    )}
+                    <p className="text-xs text-muted">
+                      {formatDate(tx.occurred_on, locale)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className={`font-semibold tabular-nums ${
+                        tx.type === "income" ? "text-income" : "text-expense"
+                      }`}
+                    >
+                      {tx.type === "income" ? "+" : "−"}
+                      {formatMoney(tx.amount, user.currency)}
                     </span>
-                  </td>
-                  <td className="max-w-[14rem] truncate px-4 py-3 text-muted">
-                    {tx.note || "—"}
-                  </td>
-                  <td
-                    className={`whitespace-nowrap px-4 py-3 text-right font-semibold ${
-                      tx.type === "income" ? "text-income" : "text-expense"
-                    }`}
-                  >
-                    {tx.type === "income" ? "+" : "−"}
-                    {formatMoney(tx.amount, user.currency)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <TransactionModal
-                        categories={categories}
-                        transaction={tx}
-                        trigger={
-                          <button className="rounded-md px-2 py-1 text-xs font-medium text-brand hover:bg-brand/10">
-                            {tr("common.edit")}
-                          </button>
-                        }
-                      />
-                      <form action={deleteTransactionAction}>
-                        <input type="hidden" name="id" value={tx.id} />
-                        <button
-                          type="submit"
-                          className="rounded-md px-2 py-1 text-xs font-medium text-expense hover:bg-expense/10"
-                        >
-                          {tr("common.delete")}
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
+                    <TxActions
+                      tx={tx}
+                      categories={categories}
+                      editLabel={tr("common.edit")}
+                      deleteLabel={tr("common.delete")}
+                    />
+                  </div>
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ul>
+
+            <table className="hidden w-full text-sm md:table">
+              <thead className="border-b border-border bg-subtle text-left text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-4 py-3">{tr("tx.date")}</th>
+                  <th className="px-4 py-3">{tr("tx.category")}</th>
+                  <th className="px-4 py-3">{tr("tx.note")}</th>
+                  <th className="px-4 py-3 text-right">{tr("tx.amount")}</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-subtle-hover">
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">
+                      {formatDate(tx.occurred_on, locale)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TxChips tx={tx} locale={locale} />
+                    </td>
+                    <td className="max-w-[14rem] truncate px-4 py-3 text-muted">
+                      {tx.note || "—"}
+                    </td>
+                    <td
+                      className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${
+                        tx.type === "income" ? "text-income" : "text-expense"
+                      }`}
+                    >
+                      {tx.type === "income" ? "+" : "−"}
+                      {formatMoney(tx.amount, user.currency)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <TxActions
+                        tx={tx}
+                        categories={categories}
+                        editLabel={tr("common.edit")}
+                        deleteLabel={tr("common.delete")}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
+    </div>
+  );
+}
+
+function TxChips({ tx, locale }: { tx: Transaction; locale: Locale }) {
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+          tx.type === "income"
+            ? "bg-income/10 text-income"
+            : "bg-expense/10 text-expense"
+        }`}
+      >
+        {tx.category || t(locale, "dash.uncategorized")}
+      </span>
+      <span className="inline-flex items-center rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">
+        {t(locale, `method.${tx.method}`)}
+      </span>
+    </span>
+  );
+}
+
+function TxActions({
+  tx,
+  categories,
+  editLabel,
+  deleteLabel,
+}: {
+  tx: Transaction;
+  categories: Category[];
+  editLabel: string;
+  deleteLabel: string;
+}) {
+  return (
+    <div className="flex justify-end gap-1">
+      <TransactionModal
+        categories={categories}
+        transaction={tx}
+        trigger={
+          <button className="min-h-9 rounded-md px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand/10">
+            {editLabel}
+          </button>
+        }
+      />
+      <form action={deleteTransactionAction}>
+        <input type="hidden" name="id" value={tx.id} />
+        <button
+          type="submit"
+          className="min-h-9 rounded-md px-3 py-1.5 text-xs font-medium text-expense hover:bg-expense/10"
+        >
+          {deleteLabel}
+        </button>
+      </form>
     </div>
   );
 }

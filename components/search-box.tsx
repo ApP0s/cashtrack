@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/i18n-provider";
 
-export function SearchBox() {
+export function SearchBox({ onDone }: { onDone?: () => void }) {
   const t = useT();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -13,6 +13,7 @@ export function SearchBox() {
     e.preventDefault();
     const q = inputRef.current?.value.trim() ?? "";
     router.push(q ? `/transactions?q=${encodeURIComponent(q)}` : "/transactions");
+    onDone?.();
   };
 
   return (

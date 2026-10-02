@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "./db";
+import { addDays } from "./dates";
 
 export type Method = "cash" | "online";
 
@@ -68,16 +69,29 @@ export async function getTransactions(
 
 export type MethodBalances = { cash: number; online: number };
 
-// Net balance held as cash vs online (income minus expense per method).
-export async function getBalancesByMethod(
+// The user's latest cut-off ("ตัดยอด"), or -infinity if they never cut off.
+// Kept in SQL so the comparison uses full timestamp precision.
+function cutoff(userId: string) {
+  return sql`coalesce(
+    (select max(closed_at) from closings where user_id = ${userId}),
+    '-infinity'::timestamptz
+  )`;
+}
+
+async function balancesWhere(
   userId: string,
+  period: "current" | "safe",
 ): Promise<MethodBalances> {
+  const inPeriod =
+    period === "current"
+      ? sql`created_at > ${cutoff(userId)}`
+      : sql`created_at <= ${cutoff(userId)}`;
   const rows = await sql<{ method: string; balance: string }[]>`
     select method,
            coalesce(sum(case when type = 'income' then amount else -amount end), 0)
              as balance
     from transactions
-    where user_id = ${userId}
+    where user_id = ${userId} and ${inPeriod}
     group by method
   `;
   const out: MethodBalances = { cash: 0, online: 0 };
@@ -88,6 +102,114 @@ export async function getBalancesByMethod(
   return out;
 }
 
+// Current cash vs online balance — only money recorded since the last cut-off.
+export function getBalancesByMethod(userId: string): Promise<MethodBalances> {
+  return balancesWhere(userId, "current");
+}
+
+// "The safe": everything recorded up to the last cut-off.
+export function getSafeBalances(userId: string): Promise<MethodBalances> {
+  return balancesWhere(userId, "safe");
+}
+
+export async function getLastClosedAt(userId: string): Promise<Date | null> {
+  const rows = await sql<{ closed_at: Date | null }[]>`
+    select max(closed_at) as closed_at from closings where user_id = ${userId}
+  `;
+  return rows[0]?.closed_at ?? null;
+}
+
+export type Closing = {
+  id: string;
+  closedAt: Date;
+  cash: number;
+  online: number;
+};
+
+// Each cut-off with the amount it moved into the safe (net of the
+// transactions recorded between the previous cut-off and this one).
+export async function getClosings(userId: string): Promise<Closing[]> {
+  const rows = await sql<
+    { id: string; closed_at: Date; cash: string; online: string }[]
+  >`
+    with c as (
+      select id, closed_at,
+             lag(closed_at) over (order by closed_at) as prev_at
+      from closings
+      where user_id = ${userId}
+    )
+    select c.id, c.closed_at,
+           coalesce(sum(case when t.method = 'cash' then
+             case when t.type = 'income' then t.amount else -t.amount end end), 0) as cash,
+           coalesce(sum(case when t.method = 'online' then
+             case when t.type = 'income' then t.amount else -t.amount end end), 0) as online
+    from c
+    left join transactions t
+      on t.user_id = ${userId}
+     and t.created_at <= c.closed_at
+     and (c.prev_at is null or t.created_at > c.prev_at)
+    group by c.id, c.closed_at
+    order by c.closed_at desc
+  `;
+  return rows.map((r) => ({
+    id: r.id,
+    closedAt: r.closed_at,
+    cash: toNum(r.cash),
+    online: toNum(r.online),
+  }));
+}
+
+export type MonthTotals = {
+  month: number; // 1-12
+  income: number;
+  expense: number;
+  net: number;
+};
+
+export type YearSummary = {
+  year: number;
+  months: MonthTotals[];
+  income: number;
+  expense: number;
+  net: number;
+};
+
+// Calendar totals by occurred_on — unaffected by cut-offs, so the full
+// history always adds up.
+export async function getYearSummary(
+  userId: string,
+  year: number,
+): Promise<YearSummary> {
+  const from = `${year}-01-01`;
+  const to = `${year + 1}-01-01`;
+  const rows = await sql<{ m: number; type: string; total: string }[]>`
+    select extract(month from occurred_on)::int as m, type, sum(amount) as total
+    from transactions
+    where user_id = ${userId}
+      and occurred_on >= ${from}::date
+      and occurred_on < ${to}::date
+    group by 1, 2
+  `;
+
+  const months: MonthTotals[] = Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    income: 0,
+    expense: 0,
+    net: 0,
+  }));
+  for (const r of rows) {
+    const m = months[r.m - 1];
+    if (!m) continue;
+    if (r.type === "income") m.income = toNum(r.total);
+    if (r.type === "expense") m.expense = toNum(r.total);
+    m.net = m.income - m.expense;
+  }
+
+  const income = months.reduce((s, m) => s + m.income, 0);
+  const expense = months.reduce((s, m) => s + m.expense, 0);
+  return { year, months, income, expense, net: income - expense };
+}
+
 export type DayBreakdown = {
   day: string;
   got: number;
@@ -95,24 +217,26 @@ export type DayBreakdown = {
   net: number;
 };
 
-// Per-day got (income) / spent (expense) for the last `days` days, newest first.
+// Per-day got (income) / spent (expense) for the `days` days ending on
+// `today` (the user's local date, YYYY-MM-DD), newest first.
 export async function getDailyBreakdown(
   userId: string,
+  today: string,
   days = 7,
 ): Promise<DayBreakdown[]> {
+  const start = addDays(today, -(days - 1));
   const rows = await sql<{ day: string; type: string; total: string }[]>`
     select to_char(occurred_on, 'YYYY-MM-DD') as day, type, sum(amount) as total
     from transactions
     where user_id = ${userId}
-      and occurred_on >= current_date - ${`${days - 1} days`}::interval
+      and occurred_on >= ${start}::date
+      and occurred_on <= ${today}::date
     group by 1, 2
   `;
 
   const map = new Map<string, DayBreakdown>();
   for (let i = 0; i < days; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = addDays(today, -i);
     map.set(key, { day: key, got: 0, spent: 0, net: 0 });
   }
   for (const r of rows) {
